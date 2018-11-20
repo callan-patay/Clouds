@@ -1,6 +1,8 @@
-﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+﻿// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
 
-Shader "Hidden/Effects"
+// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+Shader "Custom/Effects"
 {
 	Properties
 	{
@@ -10,7 +12,13 @@ Shader "Hidden/Effects"
 	SubShader
 	{
 		// No culling or depth
-		Cull Off ZWrite Off ZTest Always
+		//Cull Off ZWrite Off ZTest Always
+		Tags{ "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent" }
+		LOD 100
+
+		ZWrite On
+		//Blend SrcAlpha OneMinusSrcAlpha
+		Cull Off
 
 		Pass
 		{
@@ -40,7 +48,8 @@ Shader "Hidden/Effects"
 			{
 				float2 uv : TEXCOORD0;
 				float4 pos : SV_POSITION;
-				float3 ray : TEXCOORD1;
+				float3 raypos : TEXCOORD2;
+				float3 raydir : TEXCOORD1;
 			};
 
 			v2f vert(appdata v)
@@ -49,7 +58,7 @@ Shader "Hidden/Effects"
 
 				// Index passed via custom blit function in RaymarchGeneric.cs
 				half index = v.vertex.z;
-				v.vertex.z = 0.1;
+				//v.vertex.z = 0.1;
 
 				o.pos = UnityObjectToClipPos(v.vertex);
 				o.uv = v.uv.xy;
@@ -60,25 +69,28 @@ Shader "Hidden/Effects"
 				#endif
 
 				// Get the eyespace view ray (normalized)
-				o.ray = _FrustumCornersES[(int)index].xyz;
+				//o.ray = _FrustumCornersES[(int)index].xyz;
+				o.raypos = mul(unity_ObjectToWorld, v.vertex);
+				o.raydir = o.raypos - _WorldSpaceCameraPos;
 
 				// Dividing by z "normalizes" it in the z axis
 				// Therefore multiplying the ray by some number i gives the viewspace position
 				// of the point on the ray with [viewspace z]=i
-				o.ray /= abs(o.ray.z);
+				//o.ray /= abs(o.ray.z);
 
 				// Transform the ray from eyespace to worldspace
 				// Note: _CameraInvViewMatrix was provided by the script
-				o.ray = mul(_CameraInvViewMatrix, o.ray);
+				//o.ray = mul(_CameraInvViewMatrix, o.ray);
 				return o;
 			}
 			
 			//box
 			float sdBox(float3 p, float3 b)
 			{
-				float3 d = abs(p) - b;
+				/*float3 d = abs(p) - b;
 				return length(max(d, 0.0))
-					+ min(max(d.x, max(d.y, d.z)), 0.0); // remove this line for an only partially signed sdf 
+					+ min(max(d.x, max(d.y, d.z)), 0.0);*/ // remove this line for an only partially signed sdf 
+				float3 uvs = p / b;
 			}
 
 			// This is the distance field function.  The distance field represents the closest distance to the surface
@@ -86,6 +98,12 @@ Shader "Hidden/Effects"
 			// negative answer.
 			float map(float3 p) {
 				return sdBox(p, float3(3, 3, 3));
+			}
+
+			float4 cloudColour(float3 p, float3 b)
+			{
+				float3 uvs = p;
+				return tex3D(_Volume, uvs);
 			}
 
 			float3 calcNormal(in float3 pos)
@@ -110,15 +128,15 @@ Shader "Hidden/Effects"
 				const int maxstep = 64;
 				float t = 0; // current distance traveled along ray
 				for (int i = 0; i < maxstep; ++i) {
-					if (t >= s)
+					/*if (t >= s)
 					{
 						ret = fixed4(0, 0, 0, 0);
 						break;
-					}
+					}*/
 
 
 					float3 p = ro + rd * t; // World space position of sample
-					float d = map(p);       // Sample of distance field (see map())
+					/*float d = map(p);       // Sample of distance field (see map())
 
 											// If the sample <= 0, we have hit something (see map()).
 					if (d < 0.001) {
@@ -126,12 +144,14 @@ Shader "Hidden/Effects"
 						float3 n = calcNormal(p);
 						ret = fixed4(dot(-_LightDir.xyz, n).rrr, 1);
 						break;
-					}
+					}*/
+					float4 col = cloudColour(p, float3(1,1,1));
+					ret = ret + (col / (float)maxstep);
 
 					// If the sample > 0, we haven't hit anything yet so we should march forward
 					// We step forward by distance d, because d is the minimum distance possible to intersect
 					// an object (see map()).
-					t += d;
+					t += (1.0f / (float)maxstep);
 				}
 				return ret;
 			}
@@ -142,7 +162,7 @@ Shader "Hidden/Effects"
 			fixed4 frag (v2f i) : SV_Target
 			{
 				// ray direction
-				float3 rd = normalize(i.ray.xyz);
+				float3 rd = normalize(i.raydir.xyz);
 				// ray origin (camera position)
 				float3 ro = _CameraWS;
 
@@ -156,14 +176,23 @@ Shader "Hidden/Effects"
 				// This is done by multiplying the eyespace depth by the length of the "z-normalized"
 				// ray (see vert()).  Think of similar triangles: the view-space z-distance between a point
 				// and the camera is proportional to the absolute distance.
-				float depth = LinearEyeDepth(tex2D(_CameraDepthTexture, duv).r);
-				depth *= length(i.ray.xyz);
+				//float depth = LinearEyeDepth(tex2D(_CameraDepthTexture, duv).r);
+				//depth *= length(i.ray.xyz);
 
 				fixed3 col = tex2D(_MainTex,i.uv);
-				fixed4 add = raymarch(ro, rd, depth);
+				fixed4 add = raymarch(i.raypos, rd, 1.0f);
+				if (add.a < 0.3)
+				{
+					discard;
+				}
 
 				// Returns final color using alpha blending
-				return fixed4(col*(1.0 - add.w) + add.xyz * add.w,1.0);
+				//return fixed4(col*(1.0 - add.w) + add.xyz * add.w,1.0);
+
+				return add;
+
+
+
 			}
 			ENDCG
 		}
