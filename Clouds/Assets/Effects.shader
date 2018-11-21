@@ -8,17 +8,23 @@ Shader "Custom/Effects"
 	{
 		_MainTex ("Texture", 2D) = "white" {}
 		_Volume("Texture", 3D) = "" {}
+		_steps("Steps", int) = 128
+		_stepSize("Step Size", float) = 1
+		_mipLevel("mip Level", int) = -1
+		_offset("offset", vector) = (1,1,1,0)
+		_threshold("threshold", float) = 1
+		_volumeScale("Volume Scale", float) = 1
 	}
 	SubShader
 	{
 		// No culling or depth
 		//Cull Off ZWrite Off ZTest Always
-		Tags{ "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent" }
-		LOD 100
+			Tags{ "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent" }
+			LOD 100
+			CULL Front		// cull front faces instead of backfaces
+			ZTest Always	// always draw this geometry no matter if something is in front of it
+			ZWrite Off		// do not write this geometry into the depth buffer
 
-		ZWrite On
-		//Blend SrcAlpha OneMinusSrcAlpha
-		Cull Off
 
 		Pass
 		{
@@ -34,7 +40,6 @@ Shader "Custom/Effects"
 			sampler3D _Volume;
 			uniform float4 _MainTex_TexelSize;
 			uniform float4x4 _CameraInvViewMatrix;
-			uniform float3 _CameraWS;
 			uniform float3 _LightDir;
 			uniform sampler2D _CameraDepthTexture;
 
@@ -122,36 +127,61 @@ Shader "Custom/Effects"
 				return normalize(nor);
 			}
 
+
+			int _steps;
+			int _mipLevel;
+			int _stepSize;
+			float3 _offset;
+			float _volumeScale;
+			float _threshold;
+			
+
+
+
 			fixed4 raymarch(float3 ro, float3 rd, float s) {
 				fixed4 ret = fixed4(0, 0, 0, 0);
 
 				const int maxstep = 64;
-				float t = 0; // current distance traveled along ray
-				for (int i = 0; i < maxstep; ++i) {
-					/*if (t >= s)
+				//float t = 0; // current distance traveled along ray
+				float3 p = ro;
+				for (int i = 0; i < _steps; ++i) {
+
+					p += rd * _stepSize;
+					ret = tex3Dlod(_Volume, float4((p.xzy / _volumeScale) + _offset, _mipLevel)).rgba;
+
+					if (ret.r + ret.g > _threshold)
 					{
-						ret = fixed4(0, 0, 0, 0);
 						break;
-					}*/
+					}
+					
+				
 
 
-					float3 p = ro + rd * t; // World space position of sample
-					/*float d = map(p);       // Sample of distance field (see map())
 
-											// If the sample <= 0, we have hit something (see map()).
-					if (d < 0.001) {
-						// Lambertian Lighting
-						float3 n = calcNormal(p);
-						ret = fixed4(dot(-_LightDir.xyz, n).rrr, 1);
-						break;
-					}*/
-					float4 col = cloudColour(p, float3(1,1,1));
-					ret = ret + (col / (float)maxstep);
+					///*if (t >= s)
+					//{
+					//	ret = fixed4(0, 0, 0, 0);
+					//	break;
+					//}*/
 
-					// If the sample > 0, we haven't hit anything yet so we should march forward
-					// We step forward by distance d, because d is the minimum distance possible to intersect
-					// an object (see map()).
-					t += (1.0f / (float)maxstep);
+
+					//float3 p = ro + rd * t; // World space position of sample
+					///*float d = map(p);       // Sample of distance field (see map())
+
+					//						// If the sample <= 0, we have hit something (see map()).
+					//if (d < 0.001) {
+					//	// Lambertian Lighting
+					//	float3 n = calcNormal(p);
+					//	ret = fixed4(dot(-_LightDir.xyz, n).rrr, 1);
+					//	break;
+					//}*/
+					//float4 col = cloudColour(p, float3(1,1,1));
+					//ret = ret + (col / (float)maxstep);
+
+					//// If the sample > 0, we haven't hit anything yet so we should march forward
+					//// We step forward by distance d, because d is the minimum distance possible to intersect
+					//// an object (see map()).
+					//t += (1.0f / (float)maxstep);
 				}
 				return ret;
 			}
@@ -162,9 +192,9 @@ Shader "Custom/Effects"
 			fixed4 frag (v2f i) : SV_Target
 			{
 				// ray direction
-				float3 rd = normalize(i.raydir.xyz);
+				i.raydir = normalize(i.raypos - _WorldSpaceCameraPos);
 				// ray origin (camera position)
-				float3 ro = _CameraWS;
+				//float3 ro = _CameraWS;
 
 				float2 duv = i.uv;
 				#if UNITY_UV_STARTS_AT_TOP
@@ -179,12 +209,12 @@ Shader "Custom/Effects"
 				//float depth = LinearEyeDepth(tex2D(_CameraDepthTexture, duv).r);
 				//depth *= length(i.ray.xyz);
 
-				fixed3 col = tex2D(_MainTex,i.uv);
-				fixed4 add = raymarch(i.raypos, rd, 1.0f);
-				if (add.a < 0.3)
-				{
-					discard;
-				}
+				//fixed3 col = tex2D(_MainTex,i.uv);
+				fixed4 add = raymarch(i.raypos, i.raydir, 1.0f);
+				//if (add.a < 0.3) 
+				//{
+				//	discard;
+				//}
 
 				// Returns final color using alpha blending
 				//return fixed4(col*(1.0 - add.w) + add.xyz * add.w,1.0);
