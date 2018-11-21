@@ -75,6 +75,28 @@ Material:
     - _SrcBlend: 1
     - _UVSec: 0
     - _ZWrite: 1
+    - _colored: 0
+    - _fbmBool: 0
+    - _inverted: 0
+    - _lacunarity: 2
+    - _manhattan: 0
+    - _mipLevel: -1
+    - _octaves: 3
+    - _persistence: 1
+    - _points: 50
+    - _range: 1
+    - _res: 512
+    - _seed: 0
+    - _stepSize: 1
+    - _steps: 128
+    - _threshold: 1
+    - _volumeScale: 1
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _camera: {r: 0, g: 0, b: 0, a: 1}
+    - _contrast: {r: 1, g: 1, b: 0, a: 0}
+    - _freq: {r: 1, g: 1, b: 1, a: 1}
+    - _offset: {r: 1, g: 1, b: 1, a: 0}
+    - _positionOffset: {r: 0, g: 0, b: 0, a: 0}
+    - _scale: {r: 1, g: 1, b: 1, a: 1}

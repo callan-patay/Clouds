@@ -21,7 +21,7 @@ Shader "Custom/Effects"
 		//Cull Off ZWrite Off ZTest Always
 			Tags{ "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent" }
 			LOD 100
-			CULL Front		// cull front faces instead of backfaces
+			CULL front	// cull front faces instead of backfaces
 			ZTest Always	// always draw this geometry no matter if something is in front of it
 			ZWrite Off		// do not write this geometry into the depth buffer
 
@@ -75,8 +75,8 @@ Shader "Custom/Effects"
 
 				// Get the eyespace view ray (normalized)
 				//o.ray = _FrustumCornersES[(int)index].xyz;
-				o.raypos = mul(unity_ObjectToWorld, v.vertex);
-				o.raydir = o.raypos - _WorldSpaceCameraPos;
+				o.raypos = mul(unity_ObjectToWorld, v.vertex).xyz;
+				//o.raydir = o.raypos - _WorldSpaceCameraPos;
 
 				// Dividing by z "normalizes" it in the z axis
 				// Therefore multiplying the ray by some number i gives the viewspace position
@@ -138,15 +138,22 @@ Shader "Custom/Effects"
 
 
 
-			fixed4 raymarch(float3 ro, float3 rd, float s) {
-				fixed4 ret = fixed4(0, 0, 0, 0);
-
-				const int maxstep = 64;
+			float4 raymarch(float3 rayPos, float3 rayDir, float s) {
+				float4 ret = fixed4(0, 0, 0, 0);
+				
+				//
+					_stepSize = _stepSize / _steps;
 				//float t = 0; // current distance traveled along ray
-				float3 p = ro;
-				for (int i = 0; i < _steps; ++i) {
+				float3 p = rayPos;
 
-					p += rd * _stepSize;
+				float3 _rayDir = normalize(rayPos -_WorldSpaceCameraPos);
+
+
+
+				for (int i = 0; i < _steps; ++i) 
+				{
+
+					p += _rayDir * _stepSize;
 					ret = tex3Dlod(_Volume, float4((p.xzy / _volumeScale) + _offset, _mipLevel)).rgba;
 
 					if (ret.r + ret.g > _threshold)
@@ -155,6 +162,9 @@ Shader "Custom/Effects"
 					}
 					
 				
+	
+
+
 
 
 
@@ -189,18 +199,18 @@ Shader "Custom/Effects"
 
 
 
-			fixed4 frag (v2f i) : SV_Target
+			float4 frag (v2f i) : SV_Target
 			{
 				// ray direction
-				i.raydir = normalize(i.raypos - _WorldSpaceCameraPos);
+				//i.raydir = normalize(i.raypos - _WorldSpaceCameraPos);
 				// ray origin (camera position)
 				//float3 ro = _CameraWS;
 
-				float2 duv = i.uv;
-				#if UNITY_UV_STARTS_AT_TOP
-				if (_MainTex_TexelSize.y < 0)
-					duv.y = 1 - duv.y;
-				#endif
+				//float2 duv = i.uv;
+				//#if UNITY_UV_STARTS_AT_TOP
+				//if (_MainTex_TexelSize.y < 0)
+				//	duv.y = 1 - duv.y;
+				//#endif
 
 				// Convert from depth buffer (eye space) to true distance from camera
 				// This is done by multiplying the eyespace depth by the length of the "z-normalized"
@@ -210,7 +220,7 @@ Shader "Custom/Effects"
 				//depth *= length(i.ray.xyz);
 
 				//fixed3 col = tex2D(_MainTex,i.uv);
-				fixed4 add = raymarch(i.raypos, i.raydir, 1.0f);
+				float4 add = raymarch(i.raypos, i.raydir, 1.0f);
 				//if (add.a < 0.3) 
 				//{
 				//	discard;

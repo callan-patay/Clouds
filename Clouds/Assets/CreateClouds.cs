@@ -8,15 +8,19 @@ public class CreateClouds : MonoBehaviour {
     [SerializeField]
     private Texture3D _texture;
 
+
+
     public float scale = 20f;
 
     // Use this for initialization
     void Start () {
-        _texture = generateClouds(256);
+        _texture = generateClouds(10);
+
 
 
         GetComponent<Renderer>().material.SetTexture("_Volume", _texture);
-	}
+
+    }
 
 
     // https://github.com/fleity/VolumeDemo/blob/master/Assets/Shaders/raymarch_simple.shader
@@ -31,13 +35,17 @@ public class CreateClouds : MonoBehaviour {
     {
         Color[] colorArray = new Color[size * size * size];
         _texture = new Texture3D(size, size, size, TextureFormat.RGBA32, true);
+        float r = 1.0f / (size - 1.0f);
+
+
         for (int x = 0; x < size; x++)
         {
             for (int y = 0; y < size; y++)
             {
                 for (int z = 0; z < size; z++)
                 {
-                    float p = Perlin3D((float)x / size, (float)y / size, (float)z / size, scale);
+                    float p = Perlin3D((float)x *r, (float)y *r, (float)z *r, 1.0f);
+
                     Color c = new Color(p, p, p, p);
                     colorArray[x + (y * size) + (z * size * size)] = c;
                 }
@@ -53,13 +61,13 @@ public class CreateClouds : MonoBehaviour {
 
     public static float Perlin3D(float x, float y, float z, float scale)
     {
-        float AB = Mathf.PerlinNoise(x * scale, y * scale);
-        float BC = Mathf.PerlinNoise(y * scale, z * scale);
-        float AC = Mathf.PerlinNoise(x * scale, z * scale);
+        float AB = Mathf.PerlinNoise(x, y) * scale;
+        float BC = Mathf.PerlinNoise(y, z) * scale;
+        float AC = Mathf.PerlinNoise(x, z) * scale;
 
-        float BA = Mathf.PerlinNoise(y * scale, x * scale);
-        float CB = Mathf.PerlinNoise(z * scale, y * scale);
-        float CA = Mathf.PerlinNoise(z * scale, x * scale);
+        float BA = Mathf.PerlinNoise(y, x) * scale;
+        float CB = Mathf.PerlinNoise(z, y) * scale;
+        float CA = Mathf.PerlinNoise(z, x) * scale;
 
         float ABC = AB + BC + AC + BA + CB + CA;
         return ABC / 6f;
