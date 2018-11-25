@@ -19,9 +19,9 @@ Shader "Custom/Effects"
 	{
 		// No culling or depth
 		//Cull Off ZWrite Off ZTest Always
-			Tags{ "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent" }
+			//Tags{ "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent" }
 			LOD 100
-			CULL front	// cull front faces instead of backfaces
+			CULL Front	// cull front faces instead of backfaces
 			ZTest Always	// always draw this geometry no matter if something is in front of it
 			ZWrite Off		// do not write this geometry into the depth buffer
 
@@ -138,16 +138,16 @@ Shader "Custom/Effects"
 
 
 
-			float4 raymarch(float3 rayPos, float3 rayDir, float s) {
-				float4 ret = fixed4(0, 0, 0, 0);
+			float4 raymarch(float3 rayPos, float3 rayDir) {
+				float4 ret = fixed4(0, 0, 0, 1);
 				
 				//
-					_stepSize = _stepSize / _steps;
+				//	_stepSize = _stepSize / _steps;
 				//float t = 0; // current distance traveled along ray
 				float3 p = rayPos;
 
 				float3 _rayDir = normalize(rayPos -_WorldSpaceCameraPos);
-
+				//float stepDist = _rayDir * _stepSize;
 
 
 				for (int i = 0; i < _steps; ++i) 
@@ -220,7 +220,7 @@ Shader "Custom/Effects"
 				//depth *= length(i.ray.xyz);
 
 				//fixed3 col = tex2D(_MainTex,i.uv);
-				float4 add = raymarch(i.raypos, i.raydir, 1.0f);
+				float4 add = raymarch(i.raypos, i.raydir);
 				//if (add.a < 0.3) 
 				//{
 				//	discard;
