@@ -14,7 +14,7 @@ public class CreateClouds : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
-        _texture = generateClouds(10);
+        _texture = generateClouds(256);
 
 
 
@@ -46,7 +46,13 @@ public class CreateClouds : MonoBehaviour {
                 {
                     float p = Perlin3D((float)x *r, (float)y *r, (float)z *r, 1.0f);
 
-                    Color c = new Color(p, p, p, p);
+                    Color c = new Color(0.0f, 0.0f, 0.0f, 1.0f);
+
+                    if(p < 0.8)
+                    {
+
+                        c = new Color(p, p, p, p);
+                    }
                     colorArray[x + (y * size) + (z * size * size)] = c;
                 }
             }

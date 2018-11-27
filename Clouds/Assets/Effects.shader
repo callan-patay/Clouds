@@ -19,9 +19,9 @@ Shader "Custom/Effects"
 	{
 		// No culling or depth
 		//Cull Off ZWrite Off ZTest Always
-			//Tags{ "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent" }
+			Tags{ "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent" }
 			LOD 100
-			CULL Front	// cull front faces instead of backfaces
+			//CULL Front	// cull front faces instead of backfaces
 			ZTest Always	// always draw this geometry no matter if something is in front of it
 			ZWrite Off		// do not write this geometry into the depth buffer
 
@@ -76,7 +76,7 @@ Shader "Custom/Effects"
 				// Get the eyespace view ray (normalized)
 				//o.ray = _FrustumCornersES[(int)index].xyz;
 				o.raypos = mul(unity_ObjectToWorld, v.vertex).xyz;
-				//o.raydir = o.raypos - _WorldSpaceCameraPos;
+				o.raydir = o.raypos - _WorldSpaceCameraPos;
 
 				// Dividing by z "normalizes" it in the z axis
 				// Therefore multiplying the ray by some number i gives the viewspace position
@@ -134,9 +134,23 @@ Shader "Custom/Effects"
 			float3 _offset;
 			float _volumeScale;
 			float _threshold;
+
+			bool intersect(Ray r, AABB aabb, out float t0, out float t1)
+			{
+				float3 invR = 1.0 / r.dir;
+				float3 tbot = invR * (aabb.min - r.origin);
+				float3 ttop = invR * (aabb.max - r.origin);
+				float3 tmin = min(ttop, tbot);
+				float3 tmax = max(ttop, tbot);
+				float2 t = max(tmin.xx, tmin.yz);
+				t0 = max(t.x, t.y);
+				t = min(tmax.xx, tmax.yz);
+				t1 = min(t.x, t.y);
+				return t0 <= t1;
+			}
 			
 
-
+			//https://github.com/mattatz/unity-volume-rendering/blob/master/Assets/VolumeRendering/Shaders/VolumeRendering.cginc
 
 			float4 raymarch(float3 rayPos, float3 rayDir) {
 				float4 ret = fixed4(0, 0, 0, 1);
