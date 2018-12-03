@@ -7,7 +7,7 @@ public class CreateClouds : MonoBehaviour {
 
     [SerializeField]
     private Texture3D _texture;
-
+    public Quaternion axis = Quaternion.identity;
 
 
     public float scale = 20f;
@@ -19,6 +19,7 @@ public class CreateClouds : MonoBehaviour {
 
 
         GetComponent<Renderer>().material.SetTexture("_Volume", _texture);
+        GetComponent<Renderer>().material.SetMatrix("_AxisRotationMatrix", Matrix4x4.Rotate(axis));
 
     }
 

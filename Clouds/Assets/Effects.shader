@@ -82,21 +82,21 @@ Shader "Custom/Effects"
 			
 
 
-			float3 calcNormal(in float3 pos)
-			{
-				// epsilon - used to approximate dx when taking the derivative
-				const float2 eps = float2(0.001, 0.0);
+			//float3 calcNormal(in float3 pos)
+			//{
+			//	// epsilon - used to approximate dx when taking the derivative
+			//	const float2 eps = float2(0.001, 0.0);
 
-				// The idea here is to find the "gradient" of the distance field at pos
-				// Remember, the distance field is not boolean - even if you are inside an object
-				// the number is negative, so this calculation still works.
-				// Essentially you are approximating the derivative of the distance field at this point.
-				float3 nor = float3(
-					map(pos + eps.xyy).x - map(pos - eps.xyy).x,
-					map(pos + eps.yxy).x - map(pos - eps.yxy).x,
-					map(pos + eps.yyx).x - map(pos - eps.yyx).x);
-				return normalize(nor);
-			}
+			//	// The idea here is to find the "gradient" of the distance field at pos
+			//	// Remember, the distance field is not boolean - even if you are inside an object
+			//	// the number is negative, so this calculation still works.
+			//	// Essentially you are approximating the derivative of the distance field at this point.
+			//	float3 nor = float3(
+			//		map(pos + eps.xyy).x - map(pos - eps.xyy).x,
+			//		map(pos + eps.yxy).x - map(pos - eps.yxy).x,
+			//		map(pos + eps.yyx).x - map(pos - eps.yyx).x);
+			//	return normalize(nor);
+			//}
 
 
 			int _steps;
@@ -105,12 +105,16 @@ Shader "Custom/Effects"
 			float3 _offset;
 			float _volumeScale;
 			float _threshold;
+			float _Intensity;
+			half3 _SliceMin;
+			half3 _SliceMax;
+			float4x4 _AxisRotationMatrix;
 
-			bool intersect(float3 rayPos, float3 rayDir, float3 min, float3, max, out float t0, out float t1)
+			bool intersect(float3 rayPos, float3 rayDir, float3 boxmin, float3 boxmax, out float t0, out float t1)
 			{
 				float3 invR = 1.0 / rayDir;
-				float3 tbot = invR * (min - rayPos);
-				float3 ttop = invR * (max - rayPos);
+				float3 tbot = invR * (boxmin - rayPos);
+				float3 ttop = invR * (boxmax - rayPos);
 				float3 tmin = min(ttop, tbot);
 				float3 tmax = max(ttop, tbot);
 				float2 t = max(tmin.xx, tmin.yz);
@@ -120,11 +124,35 @@ Shader "Custom/Effects"
 				return t0 <= t1;
 			}
 			
+			float3 localize(float3 p) {
+				return mul(unity_WorldToObject, float4(p, 1)).xyz;
+			}
 
+			float3 get_uv(float3 p) {
+				// float3 local = localize(p);
+				return (p + 0.5);
+			}
+
+			float sample_volume(float3 uv, float3 p)
+			{
+				_Intensity = 1.5f;
+				_SliceMin = (0.0, 0.0, 0.0);
+				_SliceMax = (1.0, 1.0, 1.0);
+				float v = tex3D(_Volume, uv).r * _volumeScale;
+
+				float3 axis = mul(_AxisRotationMatrix, float4(p, 0)).xyz;
+				axis = get_uv(axis);
+				float min = step(_SliceMin.x, axis.x) * step(_SliceMin.y, axis.y) * step(_SliceMin.z, axis.z);
+				float max = step(axis.x, _SliceMax.x) * step(axis.y, _SliceMax.y) * step(axis.z, _SliceMax.z);
+
+				return v * min * max;
+			}
 			//https://github.com/mattatz/unity-volume-rendering/blob/master/Assets/VolumeRendering/Shaders/VolumeRendering.cginc
 
+
+#define ITERATIONS 100
 			float4 raymarch(float3 rayPos, float3 rayDir) {
-				float4 ret = fixed4(0, 0, 0, 1);
+				//float4 ret = fixed4(0, 0, 0, 1);
 				
 				//
 				//	_stepSize = _stepSize / _steps;
@@ -134,12 +162,12 @@ Shader "Custom/Effects"
 				float3 _rayDir = normalize(rayPos -_WorldSpaceCameraPos);
 				//float stepDist = _rayDir * _stepSize;
 
-				float3 min = (0, 0, 0);
-				float3 max = (1, 1, 1);
+				float3 boxmin = (-0.5, -0.5, -0.5);
+				float3 boxmax = (0.5, 0.5, 0.5);
 				float tnear;
 				float tfar;
-
-				intersect(rayPos, rayDir, min, max, tnear, tfar);
+				float4 _Color = (1, 1, 1, 1);
+				intersect(rayPos, rayDir, boxmin, boxmax, tnear, tfar);
 
 				tnear = max(0.0, tnear);
 
@@ -148,21 +176,35 @@ Shader "Custom/Effects"
 				float dist = abs(tfar - tfar);
 				_stepSize = dist / _steps;
 				float3 ds = normalize(end - start) * _stepSize;
+				float4 dst = float4(0, 0, 0, 0);
 
-
-				for (int i = 0; i < _steps; ++i) 
+				[unroll]
+				for (int i = 0; i < ITERATIONS; ++i) 
 				{
+					float3 uv = get_uv(p);
+					float v = sample_volume(uv, p);
+					float4 src = float4(v, v, v, v);
+					src.a *= 0.5;
+					src.rgb *= src.a;
 
-					p += _rayDir * _stepSize;
+					dst = (1.0 - dst.a) * src + dst;
+					p += ds;
+
+					if (dst.a > _threshold) {
+						break;
+					}
+
+					/*p += _rayDir * _stepSize;
 					ret = tex3Dlod(_Volume, float4((p.xzy / _volumeScale) + _offset, _mipLevel)).rgba;
 
 					if (ret.r + ret.g > _threshold)
 					{
 						break;
-					}
+					}*/
 
 				}
-				return ret;
+			return saturate(dst) * _Color;
+				//return dst;
 			}
 
 
