@@ -73,43 +73,14 @@ Shader "Custom/Effects"
 					o.uv.y = 1 - o.uv.y;
 				#endif
 
-				// Get the eyespace view ray (normalized)
-				//o.ray = _FrustumCornersES[(int)index].xyz;
 				o.raypos = mul(unity_ObjectToWorld, v.vertex).xyz;
 				o.raydir = o.raypos - _WorldSpaceCameraPos;
 
-				// Dividing by z "normalizes" it in the z axis
-				// Therefore multiplying the ray by some number i gives the viewspace position
-				// of the point on the ray with [viewspace z]=i
-				//o.ray /= abs(o.ray.z);
 
-				// Transform the ray from eyespace to worldspace
-				// Note: _CameraInvViewMatrix was provided by the script
-				//o.ray = mul(_CameraInvViewMatrix, o.ray);
 				return o;
 			}
 			
-			//box
-			float sdBox(float3 p, float3 b)
-			{
-				/*float3 d = abs(p) - b;
-				return length(max(d, 0.0))
-					+ min(max(d.x, max(d.y, d.z)), 0.0);*/ // remove this line for an only partially signed sdf 
-				float3 uvs = p / b;
-			}
 
-			// This is the distance field function.  The distance field represents the closest distance to the surface
-			// of any object we put in the scene.  If the given point (point p) is inside of an object, we return a
-			// negative answer.
-			float map(float3 p) {
-				return sdBox(p, float3(3, 3, 3));
-			}
-
-			float4 cloudColour(float3 p, float3 b)
-			{
-				float3 uvs = p;
-				return tex3D(_Volume, uvs);
-			}
 
 			float3 calcNormal(in float3 pos)
 			{
@@ -135,11 +106,11 @@ Shader "Custom/Effects"
 			float _volumeScale;
 			float _threshold;
 
-			bool intersect(Ray r, AABB aabb, out float t0, out float t1)
+			bool intersect(float3 rayPos, float3 rayDir, float3 min, float3, max, out float t0, out float t1)
 			{
-				float3 invR = 1.0 / r.dir;
-				float3 tbot = invR * (aabb.min - r.origin);
-				float3 ttop = invR * (aabb.max - r.origin);
+				float3 invR = 1.0 / rayDir;
+				float3 tbot = invR * (min - rayPos);
+				float3 ttop = invR * (max - rayPos);
 				float3 tmin = min(ttop, tbot);
 				float3 tmax = max(ttop, tbot);
 				float2 t = max(tmin.xx, tmin.yz);
@@ -163,6 +134,21 @@ Shader "Custom/Effects"
 				float3 _rayDir = normalize(rayPos -_WorldSpaceCameraPos);
 				//float stepDist = _rayDir * _stepSize;
 
+				float3 min = (0, 0, 0);
+				float3 max = (1, 1, 1);
+				float tnear;
+				float tfar;
+
+				intersect(rayPos, rayDir, min, max, tnear, tfar);
+
+				tnear = max(0.0, tnear);
+
+				float3 start = rayPos;
+				float3 end = rayPos + rayDir * tfar;
+				float dist = abs(tfar - tfar);
+				_stepSize = dist / _steps;
+				float3 ds = normalize(end - start) * _stepSize;
+
 
 				for (int i = 0; i < _steps; ++i) 
 				{
@@ -174,38 +160,7 @@ Shader "Custom/Effects"
 					{
 						break;
 					}
-					
-				
-	
 
-
-
-
-
-					///*if (t >= s)
-					//{
-					//	ret = fixed4(0, 0, 0, 0);
-					//	break;
-					//}*/
-
-
-					//float3 p = ro + rd * t; // World space position of sample
-					///*float d = map(p);       // Sample of distance field (see map())
-
-					//						// If the sample <= 0, we have hit something (see map()).
-					//if (d < 0.001) {
-					//	// Lambertian Lighting
-					//	float3 n = calcNormal(p);
-					//	ret = fixed4(dot(-_LightDir.xyz, n).rrr, 1);
-					//	break;
-					//}*/
-					//float4 col = cloudColour(p, float3(1,1,1));
-					//ret = ret + (col / (float)maxstep);
-
-					//// If the sample > 0, we haven't hit anything yet so we should march forward
-					//// We step forward by distance d, because d is the minimum distance possible to intersect
-					//// an object (see map()).
-					//t += (1.0f / (float)maxstep);
 				}
 				return ret;
 			}
@@ -215,33 +170,13 @@ Shader "Custom/Effects"
 
 			float4 frag (v2f i) : SV_Target
 			{
-				// ray direction
-				//i.raydir = normalize(i.raypos - _WorldSpaceCameraPos);
-				// ray origin (camera position)
-				//float3 ro = _CameraWS;
 
-				//float2 duv = i.uv;
-				//#if UNITY_UV_STARTS_AT_TOP
-				//if (_MainTex_TexelSize.y < 0)
-				//	duv.y = 1 - duv.y;
-				//#endif
-
-				// Convert from depth buffer (eye space) to true distance from camera
-				// This is done by multiplying the eyespace depth by the length of the "z-normalized"
-				// ray (see vert()).  Think of similar triangles: the view-space z-distance between a point
-				// and the camera is proportional to the absolute distance.
-				//float depth = LinearEyeDepth(tex2D(_CameraDepthTexture, duv).r);
-				//depth *= length(i.ray.xyz);
-
-				//fixed3 col = tex2D(_MainTex,i.uv);
 				float4 add = raymarch(i.raypos, i.raydir);
 				//if (add.a < 0.3) 
 				//{
 				//	discard;
 				//}
 
-				// Returns final color using alpha blending
-				//return fixed4(col*(1.0 - add.w) + add.xyz * add.w,1.0);
 
 				return add;
 
