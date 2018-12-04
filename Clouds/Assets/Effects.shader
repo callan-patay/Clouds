@@ -14,16 +14,18 @@ Shader "Custom/Effects"
 		_offset("offset", vector) = (1,1,1,0)
 		_threshold("threshold", float) = 1
 		_volumeScale("Volume Scale", float) = 1
+		_SliceMin("Slice min", Vector) = (0.0, 0.0, 0.0, -1.0)
+		_SliceMax("Slice max", Vector) = (1.0, 1.0, 1.0, -1.0)
+		_Color("Color", Color) = (1, 1, 1, 1)
 	}
 	SubShader
 	{
 		// No culling or depth
 		//Cull Off ZWrite Off ZTest Always
-			Tags{ "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent" }
-			LOD 100
-			//CULL Front	// cull front faces instead of backfaces
+			Cull Back
+			Blend SrcAlpha OneMinusSrcAlpha
 			ZTest Always	// always draw this geometry no matter if something is in front of it
-			ZWrite Off		// do not write this geometry into the depth buffer
+	
 
 
 		Pass
@@ -55,6 +57,7 @@ Shader "Custom/Effects"
 				float4 pos : SV_POSITION;
 				float3 raypos : TEXCOORD2;
 				float3 raydir : TEXCOORD1;
+				float3 local : TEXCOORD3;
 			};
 
 			v2f vert(appdata v)
@@ -62,19 +65,19 @@ Shader "Custom/Effects"
 				v2f o;
 
 				// Index passed via custom blit function in RaymarchGeneric.cs
-				half index = v.vertex.z;
+				//half index = v.vertex.z;
 				//v.vertex.z = 0.1;
 
 				o.pos = UnityObjectToClipPos(v.vertex);
-				o.uv = v.uv.xy;
-
-				#if UNITY_UV_STARTS_AT_TOP
-				if (_MainTex_TexelSize.y < 0)
-					o.uv.y = 1 - o.uv.y;
-				#endif
+				o.uv = v.uv;
+				//#if UNITY_UV_STARTS_AT_TOP
+				//if (_MainTex_TexelSize.y < 0)
+				//	o.uv.y = 1 - o.uv.y;
+				//#endif
 
 				o.raypos = mul(unity_ObjectToWorld, v.vertex).xyz;
-				o.raydir = o.raypos - _WorldSpaceCameraPos;
+				o.local = v.vertex.xyz;
+				
 
 
 				return o;
@@ -135,9 +138,7 @@ Shader "Custom/Effects"
 
 			float sample_volume(float3 uv, float3 p)
 			{
-				_Intensity = 1.5f;
-				_SliceMin = (0.0, 0.0, 0.0);
-				_SliceMax = (1.0, 1.0, 1.0);
+				//_Intensity = 1.5f;
 				float v = tex3D(_Volume, uv).r * _volumeScale;
 
 				float3 axis = mul(_AxisRotationMatrix, float4(p, 0)).xyz;
@@ -151,32 +152,34 @@ Shader "Custom/Effects"
 
 
 #define ITERATIONS 100
-			float4 raymarch(float3 rayPos, float3 rayDir) {
+			float4 _Color;
+			float4 raymarch(float3 rayPos, float3 rayDir, float3 origin) {
 				//float4 ret = fixed4(0, 0, 0, 1);
 				
 				//
 				//	_stepSize = _stepSize / _steps;
 				//float t = 0; // current distance traveled along ray
-				float3 p = rayPos;
 
-				float3 _rayDir = normalize(rayPos -_WorldSpaceCameraPos);
+				
+				float3 Dir = normalize(mul(unity_WorldToObject, rayDir));
 				//float stepDist = _rayDir * _stepSize;
 
 				float3 boxmin = (-0.5, -0.5, -0.5);
-				float3 boxmax = (0.5, 0.5, 0.5);
+				float3 boxmax = (0.5, 0.5,0.5);
 				float tnear;
 				float tfar;
-				float4 _Color = (1, 1, 1, 1);
-				intersect(rayPos, rayDir, boxmin, boxmax, tnear, tfar);
+				//_Color = (1, 1, 1, 0);
+				intersect(rayPos, Dir, boxmin, boxmax, tnear, tfar);
 
 				tnear = max(0.0, tnear);
 
-				float3 start = rayPos;
-				float3 end = rayPos + rayDir * tfar;
+				float3 start = origin;
+				float3 end = origin + Dir * tfar;
 				float dist = abs(tfar - tfar);
-				_stepSize = dist / _steps;
+				_stepSize = dist / (float)ITERATIONS;
 				float3 ds = normalize(end - start) * _stepSize;
 				float4 dst = float4(0, 0, 0, 0);
+				float3 p = start;
 
 				[unroll]
 				for (int i = 0; i < ITERATIONS; ++i) 
@@ -203,8 +206,8 @@ Shader "Custom/Effects"
 					}*/
 
 				}
-			return saturate(dst) * _Color;
-				//return dst;
+			//return saturate(dst) * _Color;
+				return dst + dst;
 			}
 
 
@@ -212,8 +215,8 @@ Shader "Custom/Effects"
 
 			float4 frag (v2f i) : SV_Target
 			{
-
-				float4 add = raymarch(i.raypos, i.raydir);
+				i.raydir = (i.raypos - _WorldSpaceCameraPos);
+				float4 add = raymarch(i.raypos, i.raydir, i.local);
 				//if (add.a < 0.3) 
 				//{
 				//	discard;
