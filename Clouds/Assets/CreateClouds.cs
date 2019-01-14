@@ -14,7 +14,7 @@ public class CreateClouds : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
-        _texture = generateClouds(256);
+        _texture = generateClouds(20);
 
 
 

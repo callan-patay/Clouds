@@ -23,8 +23,8 @@ Shader "Custom/Effects"
 		// No culling or depth
 		//Cull Off ZWrite Off ZTest Always
 			Cull Back
-			Blend SrcAlpha OneMinusSrcAlpha
-			ZTest Always	// always draw this geometry no matter if something is in front of it
+			//Blend SrcAlpha OneMinusSrcAlpha
+			//ZTest Always	// always draw this geometry no matter if something is in front of it
 	
 
 
@@ -150,7 +150,9 @@ Shader "Custom/Effects"
 			}
 			//https://github.com/mattatz/unity-volume-rendering/blob/master/Assets/VolumeRendering/Shaders/VolumeRendering.cginc
 
-
+			bool sphereHit(float3 p) {
+				return distance(p, 0.0f) < 1.0f;
+			}
 #define ITERATIONS 100
 			float4 _Color;
 			float4 raymarch(float3 rayPos, float3 rayDir, float3 origin) {
@@ -164,8 +166,8 @@ Shader "Custom/Effects"
 				float3 Dir = normalize(mul(unity_WorldToObject, rayDir));
 				//float stepDist = _rayDir * _stepSize;
 
-				float3 boxmin = (-0.5, -0.5, -0.5);
-				float3 boxmax = (0.5, 0.5,0.5);
+				float3 boxmin = (-1.0, -1.0, -1.0);
+				float3 boxmax = (1, 1,1);
 				float tnear;
 				float tfar;
 				//_Color = (1, 1, 1, 0);
@@ -191,6 +193,14 @@ Shader "Custom/Effects"
 					src.rgb *= src.a;
 
 					dst = (1.0 - dst.a) * src + dst;
+
+					//if (sphereHit(p))
+					//{
+					//	return(1, 0, 0, 1);
+					//}
+
+
+
 					p += ds;
 
 					if (dst.a > _threshold) {
@@ -206,8 +216,9 @@ Shader "Custom/Effects"
 					}*/
 
 				}
-			//return saturate(dst) * _Color;
-				return dst + dst;
+			return saturate(dst) * _Color;
+				//return dst + dst;
+			
 			}
 
 
