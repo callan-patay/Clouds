@@ -23,7 +23,7 @@ Shader "Custom/Effects"
 		// No culling or depth
 		//Cull Off ZWrite Off ZTest Always
 			Cull Back
-			//Blend SrcAlpha OneMinusSrcAlpha
+			Blend SrcAlpha OneMinusSrcAlpha
 			//ZTest Always	// always draw this geometry no matter if something is in front of it
 	
 
@@ -74,9 +74,9 @@ Shader "Custom/Effects"
 				//if (_MainTex_TexelSize.y < 0)
 				//	o.uv.y = 1 - o.uv.y;
 				//#endif
-
 				o.raypos = mul(unity_ObjectToWorld, v.vertex).xyz;
 				o.local = v.vertex.xyz;
+				o.raydir = (o.raypos - _WorldSpaceCameraPos);
 				
 
 
@@ -132,7 +132,7 @@ Shader "Custom/Effects"
 			}
 
 			float3 get_uv(float3 p) {
-				// float3 local = localize(p);
+				 float3 local = localize(p);
 				return (p + 0.5);
 			}
 
@@ -154,7 +154,7 @@ Shader "Custom/Effects"
 				return distance(p, 0.0f) < 1.0f;
 			}
 #define ITERATIONS 100
-			float4 _Color;
+			half4 _Color;
 			float4 raymarch(float3 rayPos, float3 rayDir, float3 origin) {
 				//float4 ret = fixed4(0, 0, 0, 1);
 				
@@ -163,28 +163,28 @@ Shader "Custom/Effects"
 				//float t = 0; // current distance traveled along ray
 
 				
-				float3 Dir = normalize(mul(unity_WorldToObject, rayDir));
-				//float stepDist = _rayDir * _stepSize;
+				//float3 Dir = normalize(mul(unity_WorldToObject, rayDir));
+				//float stepDist = rayDir * _stepSize;
 
-				float3 boxmin = (-1.0, -1.0, -1.0);
-				float3 boxmax = (1, 1,1);
+				float3 boxmin = (-0.5, -0.5, -0.5);
+				float3 boxmax = (0.5, 0.5,0.5);
 				float tnear;
 				float tfar;
-				//_Color = (1, 1, 1, 0);
-				intersect(rayPos, Dir, boxmin, boxmax, tnear, tfar);
+				_Color = (1, 1, 1, 1);
+				intersect(rayPos, rayDir, boxmin, boxmax, tnear, tfar);
 
 				tnear = max(0.0, tnear);
 
-				float3 start = origin;
-				float3 end = origin + Dir * tfar;
-				float dist = abs(tfar - tfar);
+				float3 start = rayPos;
+				float3 end = rayPos + rayDir * tfar;
+				float dist = abs(tfar - tnear);
 				_stepSize = dist / (float)ITERATIONS;
 				float3 ds = normalize(end - start) * _stepSize;
 				float4 dst = float4(0, 0, 0, 0);
 				float3 p = start;
 
 				[unroll]
-				for (int i = 0; i < ITERATIONS; ++i) 
+				for (int i = 0; i < ITERATIONS; i++) 
 				{
 					float3 uv = get_uv(p);
 					float v = sample_volume(uv, p);
@@ -194,16 +194,14 @@ Shader "Custom/Effects"
 
 					dst = (1.0 - dst.a) * src + dst;
 
-					//if (sphereHit(p))
-					//{
-					//	return(1, 0, 0, 1);
-					//}
-
-
 
 					p += ds;
 
-					if (dst.a > _threshold) {
+
+
+
+
+					if (dst.a> _threshold) {
 						break;
 					}
 
@@ -217,6 +215,7 @@ Shader "Custom/Effects"
 
 				}
 			return saturate(dst) * _Color;
+				//return dst;
 				//return dst + dst;
 			
 			}
@@ -226,7 +225,9 @@ Shader "Custom/Effects"
 
 			float4 frag (v2f i) : SV_Target
 			{
-				i.raydir = (i.raypos - _WorldSpaceCameraPos);
+				i.raypos = i.local;
+				float3 dir = (i.raypos - _WorldSpaceCameraPos);
+				i.raydir = normalize(mul(unity_WorldToObject, dir));
 				float4 add = raymarch(i.raypos, i.raydir, i.local);
 				//if (add.a < 0.3) 
 				//{

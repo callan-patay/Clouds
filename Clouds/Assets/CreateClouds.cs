@@ -14,7 +14,7 @@ public class CreateClouds : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
-        _texture = generateClouds(20);
+        _texture = generateClouds(32);
 
 
 
@@ -35,7 +35,7 @@ public class CreateClouds : MonoBehaviour {
     Texture3D generateClouds(int size)
     {
         Color[] colorArray = new Color[size * size * size];
-        _texture = new Texture3D(size, size, size, TextureFormat.RGBA32, true);
+        _texture = new Texture3D(size, size, size, TextureFormat.RGBA32, false);
         float r = 1.0f / (size - 1.0f);
 
 
@@ -49,10 +49,14 @@ public class CreateClouds : MonoBehaviour {
 
                     Color c; //= new Color(0.0f, 0.0f, 0.0f, 1.0f);
 
-                    //if(p < 0.8)
-                   // {
-
-                        c = new Color(p, p, p, p);
+                    /*if(p > 0.5)
+                    {
+                        c = new Color(1.0f, 1.0f, 1.0f, 1.0f);// (p, p, p, p);
+                    } else
+                    {
+                        c = new Color(0, 0, 0, 0);
+                    }*/
+                    c = new Color(p, p, p, p);
                     //}
                     colorArray[x + (y * size) + (z * size * size)] = c;
                 }
