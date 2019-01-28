@@ -22,7 +22,8 @@ public class CreateClouds : MonoBehaviour {
         GetComponent<Renderer>().material.SetTexture("_Volume", _texture);
         GetComponent<Renderer>().material.SetTexture("_Volume1", _texture1);
         GetComponent<Renderer>().material.SetMatrix("_AxisRotationMatrix", Matrix4x4.Rotate(axis));
-
+        GetComponent<Renderer>().material.SetVector("_Scale", transform.localScale);
+       
     }
 
 
@@ -30,7 +31,9 @@ public class CreateClouds : MonoBehaviour {
 
     // Update is called once per frame
     void Update () {
-		
+        GetComponent<Renderer>().material.SetVector("_Pos", transform.position);
+
+        
 	}
     Texture3D generateClouds1(int size)
     {
@@ -45,7 +48,7 @@ public class CreateClouds : MonoBehaviour {
             {
                 for (int z = 0; z < size; z++)
                 {
-                    float p = Perlin3D((float)x * r, (float)y * r, (float)z * r, 3.0f);
+                    float p = Perlin3D((float)x * r, (float)y * r, (float)z * r, 6.0f);
 
 
                     Color c; //= new Color(0.0f, 0.0f, 0.0f, 1.0f);
@@ -85,12 +88,12 @@ public class CreateClouds : MonoBehaviour {
             {
                 for (int z = 0; z < size; z++)
                 {
-                    float p = Perlin3D((float)x *r, (float)y *r, (float)z *r, 1.0f);
+                    float p = Perlin3D((float)x *r, (float)y *r, (float)z *r, 8.0f);
                     Color c; //= new Color(0.0f, 0.0f, 0.0f, 1.0f);
 
                     if (p > 0.5)
                     {
-                        c = new Color (p, p, p, p);
+                        c = new Color (p, p, p, 1.0f);
                     }
                     else
                     {

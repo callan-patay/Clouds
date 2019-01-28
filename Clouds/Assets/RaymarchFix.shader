@@ -1,4 +1,6 @@
-﻿Shader "Custom/RaymarchFix" {
+﻿
+
+Shader "Custom/RaymarchFix" {
 
 	Properties
 	{
@@ -9,6 +11,8 @@
 		_SliceMin("Slice min", Vector) = (0.0, 0.0, 0.0, -1.0)
 		_SliceMax("Slice max", Vector) = (1.0, 1.0, 1.0, -1.0)
 		_Color("Color", Color) = (1, 1, 1, 1)
+		_Scale("Scale", Vector) = (1.0, 1.0, 1.0, -1.0)
+		_Pos("Pos", Vector) = (0.0, 0.0, 0.0, -1.0)
 	}
 		SubShader
 	{
@@ -83,9 +87,9 @@
 		return t0 <= t1;
 	}
 
-	float sample_volume(float3 uv, float3 p)
+	float sample_volume(float3 uv, float3 p, sampler3D _Volumes)
 	{
-		float v = tex3D(_Volume, uv).r * _Intensity;
+		float v = tex3D(_Volumes, uv).r * _Intensity;
 
 		float3 axis = mul(_AxisRotationMatrix, float4(p, 0)).xyz;
 		axis = texCoordsFromPosition(axis);
@@ -95,23 +99,23 @@
 		return v * min * max;
 	}
 
-	float sample_volume1(float3 uv, float3 p)
-	{
-		float v = tex3D(_Volume1, uv).r * _Intensity;
-
-		float3 axis = mul(_AxisRotationMatrix, float4(p, 0)).xyz;
-		axis = texCoordsFromPosition(axis);
-		float min = step(_SliceMin.x, axis.x) * step(_SliceMin.y, axis.y) * step(_SliceMin.z, axis.z);
-		float max = step(axis.x, _SliceMax.x) * step(axis.y, _SliceMax.y) * step(axis.z, _SliceMax.z);
-
-		return v * min * max;
-	}
+	half3 _Scale;
+	half3 _Pos;
 
 	fixed4 raymarchHit(Ray r) {
 		AABB aabb;
 
-		aabb.min = float3(r.origin.x  - 0.5f, r.origin.y - 0.5f, r.origin.z - 0.5f);
-		aabb.max = float3(r.origin.x + 0.5f, r.origin.y + 0.5f, r.origin.z + 0.5f);
+		aabb.min = float3( -0.5f, -0.5f, -0.5f);
+		aabb.max = float3(0.5f, 0.5f, 0.5f);
+
+
+
+		_SliceMin = r.origin.xyz;
+		_SliceMax = float3((r.origin.x + 1.0f), (r.origin.y + 1.0f), (r.origin.z + 1.0f));
+
+		//_SliceMin = _Pos;
+		//_SliceMax = float3((_Pos.x + 1.0f), (_Pos.y + 1.0f), (_Pos.z + 1.0f));
+
 		float tnear;
 		float tfar;
 		intersect(r, aabb, tnear, tfar);
@@ -142,14 +146,15 @@
 			//r.origin += r.dir * STEP_SIZE;
 
 			float3 uv = texCoordsFromPosition(p);
-			float v = sample_volume(uv, p);
-			float v1 = sample_volume1(uv, p);
+			float v = sample_volume(uv, p, _Volume);
+			float v1 = sample_volume(uv, p, _Volume1);
 			float4 src = float4(v1, v1, v1, v1) + float4(v,v,v,v);
 			src.a *= 0.5;
 			src.rgb *= src.a;
 
 			// blend
 			density = (1.0 - density.a) * src + density;
+
 			p += ds;
 
 			if (density.a > _Threshold) break;
