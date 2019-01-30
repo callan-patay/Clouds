@@ -19,6 +19,27 @@ public class CreateClouds : MonoBehaviour {
         _texture1 = generateClouds1(256);
 
 
+        /* rgb's
+         * 
+         * cumulus scattering 0.0814896 red channel
+         *         absorbtion 0.110804 * 10^-6 green channel
+         *         
+         * stratocumulus scattering 0.1222340
+         *               absorbtion 0.844671 * 10^-7
+         * 
+         * cirrus scattering 0.1661800
+         *        absorbtion 0.1 * 10^-8
+         * 
+         * 
+         * 
+         * 
+         * 
+         * 
+         * */
+
+
+
+
         GetComponent<Renderer>().material.SetTexture("_Volume", _texture);
         GetComponent<Renderer>().material.SetTexture("_Volume1", _texture1);
         GetComponent<Renderer>().material.SetMatrix("_AxisRotationMatrix", Matrix4x4.Rotate(axis));

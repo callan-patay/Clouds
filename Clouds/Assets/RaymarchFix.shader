@@ -70,7 +70,8 @@ Shader "Custom/RaymarchFix" {
 
 	float3 texCoordsFromPosition(float3 position)
 	{
-		return position + float3(0.5, 0.5, 0.5);
+		float3 npos = mul(unity_WorldToObject, float4(position, 1.0)).xyz;
+		return npos + float3(0.5, 0.5, 0.5);
 	}
 
 	bool intersect(Ray r, AABB aabb, out float t0, out float t1)
@@ -110,8 +111,8 @@ Shader "Custom/RaymarchFix" {
 
 
 
-		_SliceMin = r.origin.xyz;
-		_SliceMax = float3((r.origin.x + 1.0f), (r.origin.y + 1.0f), (r.origin.z + 1.0f));
+		//_SliceMin = r.origin.xyz;
+		//_SliceMax = float3((r.origin.x + 1.0f), (r.origin.y + 1.0f), (r.origin.z + 1.0f));
 
 		//_SliceMin = _Pos;
 		//_SliceMax = float3((_Pos.x + 1.0f), (_Pos.y + 1.0f), (_Pos.z + 1.0f));
@@ -135,36 +136,52 @@ Shader "Custom/RaymarchFix" {
 		for (int i = 0; i < STEPS; i++)
 		{
 
-			//float3 p = texCoordsFromPosition(r.origin);
-			//if (p.x < 0 || p.x > 1.0 || p.y < 0 || p.y > 1.0 || p.z < 0 || p.z > 1.0)
-			//{
-			//	return density;
-			//}
-			//float4 texel = tex3D(_Volume, texCoordsFromPosition(r.origin));
-			//density += texel.r / STEPS;
-			////density = 1.0f;
-			//r.origin += r.dir * STEP_SIZE;
+			float3 p = texCoordsFromPosition(r.origin);
+			if (p.x < 0 || p.x > 1.0 || p.y < 0 || p.y > 1.0 || p.z < 0 || p.z > 1.0)
+			{
+				return density;
+			}
+			float4 texel = tex3D(_Volume, texCoordsFromPosition(r.origin));
+			density += texel.r / STEPS;
+			//density = 1.0f;
+			r.origin += r.dir * STEP_SIZE;
 
-			float3 uv = texCoordsFromPosition(p);
-			float v = sample_volume(uv, p, _Volume);
-			float v1 = sample_volume(uv, p, _Volume1);
-			float4 src = float4(v1, v1, v1, v1) + float4(v,v,v,v);
-			src.a *= 0.5;
-			src.rgb *= src.a;
+			//float3 uv = texCoordsFromPosition(p);
+			//float v = sample_volume(uv, p, _Volume);
+			//float v1 = sample_volume(uv, p, _Volume1);
+			//float4 src = float4(v1, v1, v1, v1) + float4(v,v,v,v);
+			//src.a *= 0.5;
+			//src.rgb *= src.a;
 
-			// blend
-			density = (1.0 - density.a) * src + density;
+			//// blend
+			//density = (1.0 - density.a) * src + density;
 
-			p += ds;
+			//p += ds;
 
-			if (density.a > _Threshold) break;
+			//if (density.a > _Threshold) break;
 
 
 
 
 		}
-		return saturate(density) * _Color;
-		//return density;
+		//return saturate(density) * _Color;
+		return density;
+	}
+
+	int sampleDistance(Ray r, out float t)
+	{
+
+	}
+
+	float3 trace(Ray r)
+	{
+		float3 paththrougput = (1.0f, 1.0f, 1.0f);
+		// 1 While path not terminated
+		// Sample distance (wwodcock)
+		// if outside cloud break
+		// otherwise calculate direct lighting and add
+		// sample phase function
+		// goto 1
 	}
 
 	fixed4 frag(v2f i) : SV_Target
@@ -172,8 +189,8 @@ Shader "Custom/RaymarchFix" {
 		Ray ray;
 		float3 worldPosition = i.wPos;
 		float3 viewDirection = normalize(i.wPos - _WorldSpaceCameraPos);
-		ray.origin = worldPosition;
-		ray.dir = viewDirection;
+		ray.origin = worldPosition;// mul(unity_WorldToObject, float4(worldPosition, 1.0)).xyz;
+		ray.dir = viewDirection;// mul(unity_WorldToObject, float4(viewDirection, 0)).xyz;
 
 		float4 tp = raymarchHit(ray);
 		return tp;
