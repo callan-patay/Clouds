@@ -1,7 +1,4 @@
-﻿
-
-Shader "Custom/RaymarchFix" {
-
+﻿Shader "Custom/RaymarchFix" {
 	Properties
 	{
 		_Volume("Texture", 3D) = "" {}
@@ -11,8 +8,8 @@ Shader "Custom/RaymarchFix" {
 		_SliceMin("Slice min", Vector) = (0.0, 0.0, 0.0, -1.0)
 		_SliceMax("Slice max", Vector) = (1.0, 1.0, 1.0, -1.0)
 		_Color("Color", Color) = (1, 1, 1, 1)
-		_Scale("Scale", Vector) = (1.0, 1.0, 1.0, -1.0)
-		_Pos("Pos", Vector) = (0.0, 0.0, 0.0, -1.0)
+		_LightDir("LightDir", Vector) = (0.0, 0.0, 0.0, -1.0)
+
 	}
 		SubShader
 	{
@@ -61,6 +58,7 @@ Shader "Custom/RaymarchFix" {
 	half _Intensity, _Threshold;
 	half3 _SliceMin, _SliceMax;
 	float4x4 _AxisRotationMatrix;
+
 	v2f vert(appdata v) {
 		v2f o;
 		o.vertex = UnityObjectToClipPos(v.vertex);
@@ -74,70 +72,79 @@ Shader "Custom/RaymarchFix" {
 		return npos + float3(0.5, 0.5, 0.5);
 	}
 
-	bool intersect(Ray r, AABB aabb, out float t0, out float t1)
+	//bool intersect(Ray r, AABB aabb, out float t0, out float t1)
+	//{
+	//	float3 invR = 1.0 / r.dir;
+	//	float3 tbot = invR * (aabb.min - r.origin);
+	//	float3 ttop = invR * (aabb.max - r.origin);
+	//	float3 tmin = min(ttop, tbot);
+	//	float3 tmax = max(ttop, tbot);
+	//	float2 t = max(tmin.xx, tmin.yz);
+	//	t0 = max(t.x, t.y);
+	//	t = min(tmax.xx, tmax.yz);
+	//	t1 = min(t.x, t.y);
+	//	return t0 <= t1;
+	//}
+
+	//float sample_volume(float3 uv, float3 p, sampler3D _Volumes)
+	//{
+	//	float v = tex3D(_Volumes, uv).r * _Intensity;
+
+	//	float3 axis = mul(_AxisRotationMatrix, float4(p, 0)).xyz;
+	//	axis = texCoordsFromPosition(axis);
+	//	float min = step(_SliceMin.x, axis.x) * step(_SliceMin.y, axis.y) * step(_SliceMin.z, axis.z);
+	//	float max = step(axis.x, _SliceMax.x) * step(axis.y, _SliceMax.y) * step(axis.z, _SliceMax.z);
+
+	//	return v * min * max;
+	//}
+
+	//half3 _Scale;
+	//half3 _Pos;
+
+	bool outside(float3 uv)
 	{
-		float3 invR = 1.0 / r.dir;
-		float3 tbot = invR * (aabb.min - r.origin);
-		float3 ttop = invR * (aabb.max - r.origin);
-		float3 tmin = min(ttop, tbot);
-		float3 tmax = max(ttop, tbot);
-		float2 t = max(tmin.xx, tmin.yz);
-		t0 = max(t.x, t.y);
-		t = min(tmax.xx, tmax.yz);
-		t1 = min(t.x, t.y);
-		return t0 <= t1;
+		const float EPSILON = 0.01;
+		float lower = -EPSILON;
+		float upper = 1 + EPSILON;
+		return (
+			uv.x < lower || uv.y < lower || uv.z < lower ||
+			uv.x > upper || uv.y > upper || uv.z > upper
+			);
 	}
 
-	float sample_volume(float3 uv, float3 p, sampler3D _Volumes)
-	{
-		float v = tex3D(_Volumes, uv).r * _Intensity;
 
-		float3 axis = mul(_AxisRotationMatrix, float4(p, 0)).xyz;
-		axis = texCoordsFromPosition(axis);
-		float min = step(_SliceMin.x, axis.x) * step(_SliceMin.y, axis.y) * step(_SliceMin.z, axis.z);
-		float max = step(axis.x, _SliceMax.x) * step(axis.y, _SliceMax.y) * step(axis.z, _SliceMax.z);
-
-		return v * min * max;
-	}
-
-	half3 _Scale;
-	half3 _Pos;
 
 	fixed4 raymarchHit(Ray r) {
-		AABB aabb;
+		//AABB aabb;
 
-		aabb.min = float3( -0.5f, -0.5f, -0.5f);
-		aabb.max = float3(0.5f, 0.5f, 0.5f);
+		//aabb.min = float3( -0.5f, -0.5f, -0.5f);
+		//aabb.max = float3(0.5f, 0.5f, 0.5f);
 
+		//float tnear;
+		//float tfar;
+		//intersect(r, aabb, tnear, tfar);
 
-
-		//_SliceMin = r.origin.xyz;
-		//_SliceMax = float3((r.origin.x + 1.0f), (r.origin.y + 1.0f), (r.origin.z + 1.0f));
-
-		//_SliceMin = _Pos;
-		//_SliceMax = float3((_Pos.x + 1.0f), (_Pos.y + 1.0f), (_Pos.z + 1.0f));
-
-		float tnear;
-		float tfar;
-		intersect(r, aabb, tnear, tfar);
-
-		tnear = max(0.0, tnear);
+		//tnear = max(0.0, tnear);
 
 		float4 density = (0.0, 0.0, 0.0, 0.0);
 
-		float3 start = r.origin;
-		float3 end = r.origin + r.dir * tfar;
-		//float dist = abs(tfar - tnear); 
-		float dist = distance(start, end);
-		float step_size = dist / float(STEPS);
-		//float step_size = 0.04f;
-		float3 ds = normalize(end - start) * step_size;
-		float3 p = start;
+		//float3 start = r.origin;
+		//float3 end = r.origin + r.dir * tfar;
+		////float dist = abs(tfar - tnear); 
+		//float dist = distance(start, end);
+		//float step_size = dist / float(STEPS);
+		////float step_size = 0.04f;
+		//float3 ds = normalize(end - start) * step_size;
+		//float3 p = start;
 		for (int i = 0; i < STEPS; i++)
 		{
 
 			float3 p = texCoordsFromPosition(r.origin);
-			if (p.x < 0 || p.x > 1.0 || p.y < 0 || p.y > 1.0 || p.z < 0 || p.z > 1.0)
+/*			if (p.x < 0 || p.x > 1.0 || p.y < 0 || p.y > 1.0 || p.z < 0 || p.z > 1.0)
+			{
+				return density;
+			}*/	
+			if (outside(p))
 			{
 				return density;
 			}
@@ -146,6 +153,10 @@ Shader "Custom/RaymarchFix" {
 			//density = 1.0f;
 			r.origin += r.dir * STEP_SIZE;
 
+
+
+
+		
 			//float3 uv = texCoordsFromPosition(p);
 			//float v = sample_volume(uv, p, _Volume);
 			//float v1 = sample_volume(uv, p, _Volume1);
@@ -168,14 +179,41 @@ Shader "Custom/RaymarchFix" {
 		return density;
 	}
 
+	float _Seed;
+
+
+	//float rand()
+	//{
+	//	float result = frac(sin(_Seed / 100.0f * dot(_Pixel, float2(12.9898f, 78.233f))) * 43758.5453f);
+	//	_Seed += 1.0f;
+	//	return result;
+	//}
+	float3 _LightDir;
+
 	int sampleDistance(Ray r, out float t)
 	{
+		int s = 0;
+		while (true)
+		{
+
+
+
+			break;
+		}
 
 	}
 
 	float3 trace(Ray r)
 	{
 		float3 paththrougput = (1.0f, 1.0f, 1.0f);
+
+		//if(outside(texCoordsFromPosition(r.origin)))
+		//{
+		//		break;
+		//}
+
+
+
 		// 1 While path not terminated
 		// Sample distance (wwodcock)
 		// if outside cloud break

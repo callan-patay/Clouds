@@ -9,15 +9,20 @@ public class CreateClouds : MonoBehaviour {
     private Texture3D _texture;
     private Texture3D _texture1;
     public Quaternion axis = Quaternion.identity;
+    public GameObject DirectionalLight;
 
+    private float cumulusScatter;
+    private float cumulusAbsorb;
 
     public float scale = 20f;
 
     // Use this for initialization
     void Start () {
         _texture = generateClouds(256);
-        _texture1 = generateClouds1(256);
+        //_texture1 = generateClouds1(256);
 
+        cumulusScatter = 0.0814896f;
+        cumulusAbsorb = 0.000000110804f;
 
         /* rgb's
          * 
@@ -43,7 +48,7 @@ public class CreateClouds : MonoBehaviour {
         GetComponent<Renderer>().material.SetTexture("_Volume", _texture);
         GetComponent<Renderer>().material.SetTexture("_Volume1", _texture1);
         GetComponent<Renderer>().material.SetMatrix("_AxisRotationMatrix", Matrix4x4.Rotate(axis));
-        GetComponent<Renderer>().material.SetVector("_Scale", transform.localScale);
+        GetComponent<Renderer>().material.SetVector("_LightDir", DirectionalLight.transform.eulerAngles);
        
     }
 
@@ -69,14 +74,18 @@ public class CreateClouds : MonoBehaviour {
             {
                 for (int z = 0; z < size; z++)
                 {
-                    float p = Perlin3D((float)x * r, (float)y * r, (float)z * r, 6.0f);
-
+                    float p = Perlin3D((float)x * r, (float)y * r, (float)z * r, 8.0f);
+                    float p1 = Perlin3D((float)x * r, (float)y * r, (float)z * r, 6.0f);
 
                     Color c; //= new Color(0.0f, 0.0f, 0.0f, 1.0f);
 
                     if (p > 0.5)
                     {
-                        c = new Color(p, p, p, p);
+                        c = new Color(cumulusScatter, cumulusAbsorb, 0, 1.0f);
+                    }
+                    else if (p1 > 0.5)
+                    {
+                        c = new Color(cumulusScatter, cumulusAbsorb, 0, 1.0f);
                     }
                     else
                     {
@@ -110,11 +119,16 @@ public class CreateClouds : MonoBehaviour {
                 for (int z = 0; z < size; z++)
                 {
                     float p = Perlin3D((float)x *r, (float)y *r, (float)z *r, 8.0f);
+                    float p1 = Perlin3D((float)x * r, (float)y * r, (float)z * r, 6.0f);
                     Color c; //= new Color(0.0f, 0.0f, 0.0f, 1.0f);
 
                     if (p > 0.5)
                     {
                         c = new Color (p, p, p, 1.0f);
+                    }
+                    else if(p1 > 0.5)
+                    {
+                        c = new Color(p1, p1, p1, 1.0f);
                     }
                     else
                     {

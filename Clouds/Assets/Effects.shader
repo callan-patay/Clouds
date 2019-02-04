@@ -17,6 +17,7 @@ Shader "Custom/Effects"
 		_SliceMin("Slice min", Vector) = (0.0, 0.0, 0.0, -1.0)
 		_SliceMax("Slice max", Vector) = (1.0, 1.0, 1.0, -1.0)
 		_Color("Color", Color) = (1, 1, 1, 1)
+
 	}
 	SubShader
 	{
