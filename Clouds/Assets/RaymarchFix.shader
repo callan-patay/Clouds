@@ -155,7 +155,6 @@
 
 
 
-
 		
 			//float3 uv = texCoordsFromPosition(p);
 			//float v = sample_volume(uv, p, _Volume);
@@ -179,40 +178,110 @@
 		return density;
 	}
 
-	float _Seed;
+	float2 coefficients(float3 wpos)
+	{
+			float3 npos = mul(unity_WorldToObject, float4(wpos, 1.0)).xyz + float3(0.5, 0.5, 0.5);
+			return tex3D(_Volume, npos).rg;
+	}
 
+	uint hash(uint x) {
+		x += (x << 10u);
+		x ^= (x >> 6u);
+		x += (x << 3u);
+		x ^= (x >> 11u);
+		x += (x << 15u);
+		return x;
+	}
 
-	//float rand()
-	//{
-	//	float result = frac(sin(_Seed / 100.0f * dot(_Pixel, float2(12.9898f, 78.233f))) * 43758.5453f);
-	//	_Seed += 1.0f;
-	//	return result;
-	//}
+	float random(float f) {
+		const uint mantissaMask = 0x007FFFFFu;
+		const uint one = 0x3F800000u;
+
+		uint h = hash(asuint(f));
+		h &= mantissaMask;
+		h |= one;
+
+		float  r2 = asfloat(h);
+		return r2 - 1.0;
+	}
 	float3 _LightDir;
 
-	int sampleDistance(Ray r, out float t)
+	float sampleDistance(Ray r)
 	{
-		int s = 0;
+		float s = 0;
+
+		float cumulusScatter = 0.0814896f;
+		float cumulusAbsorb = 0.000000110804f;
+		float max = cumulusScatter + cumulusAbsorb;
+
+		float randValue = random(frac(r.origin.x + r.origin.y + r.origin.z));
+
+		float newRand = random(randValue);
 		while (true)
 		{
-
-
-
-			break;
+			s += -log(1 - randValue) / max;
+			newRand = random(randValue);
+			float2 sigma;
+			sigma = coefficients(r.origin + (s * r.dir));
+			if(newRand < ((sigma.r + sigma.g) / max))
+			{ 
+				break;
+			}
+			randValue = random(newRand);
 		}
+		return s;
+	}
+
+	float g = 0.0f;
+	float M_PI = 3.14159;
+	float M_TWO_PI = 6.28318;
+
+	float eval(const float3 wo, const float3 wi)
+	{
+		const float k = 1.0f + (g * g) - (2.0f * g * dot(wi, wo));
+		return  (1.0f / (4.0f * M_PI)) *((1.0f - (g * g)) / (k * sqrt(k)));
+	}
+
+	float HG()
+	{
+		float costheta;
+		costheta = (1.0f - (g * g)) / (1.0f - g + (2.0f * g * s1));
+		costheta = (1.0f + (g * g) - (costheta * costheta)) / (2.0f * g);
+		float sintheta;
+		sintheta = sqrtf(1.0f - (costheta * costheta));
+		float phi;
+		phi = s2 * M_TWO_PI;
+		wi = float3(sintheta * cos(phi), sintheta * sin(phi), costheta);
+	}
+
+
+	float3 computeDirectLighting(float3 pos)
+	{
+
+
+
 
 	}
+
 
 	float3 trace(Ray r)
 	{
 		float3 paththrougput = (1.0f, 1.0f, 1.0f);
+		float4 colour = (0.0f, 0.0f, 0.0f, 0.0f);
+		for (int i = 0; i < 10; i++)
+		{
+			float distance = sampleDistance(r);
+			r.origin += r.dir * distance;
+			if (outside(texCoordsFromPosition(r.origin)))
+			{
+				break;
+			}
+			else
+			{
 
-		//if(outside(texCoordsFromPosition(r.origin)))
-		//{
-		//		break;
-		//}
+			}
 
-
+		}
 
 		// 1 While path not terminated
 		// Sample distance (wwodcock)

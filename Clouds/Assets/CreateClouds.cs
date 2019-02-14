@@ -7,8 +7,7 @@ public class CreateClouds : MonoBehaviour {
 
     [SerializeField]
     private Texture3D _texture;
-    private Texture3D _texture1;
-    private Texture3D _texture2;
+
     public Quaternion axis = Quaternion.identity;
     public GameObject DirectionalLight;
 
@@ -20,7 +19,7 @@ public class CreateClouds : MonoBehaviour {
     // Use this for initialization
     void Start () {
         _texture = generateVolume(256);
-        //_texture1 = generateClouds1(256);
+    
 
         cumulusScatter = 0.0814896f;
         cumulusAbsorb = 0.000000110804f;
@@ -47,7 +46,7 @@ public class CreateClouds : MonoBehaviour {
 
 
         GetComponent<Renderer>().material.SetTexture("_Volume", _texture);
-        GetComponent<Renderer>().material.SetTexture("_Volume1", _texture1);
+        //GetComponent<Renderer>().material.SetTexture("_Volume1", _texture1);
         GetComponent<Renderer>().material.SetMatrix("_AxisRotationMatrix", Matrix4x4.Rotate(axis));
         GetComponent<Renderer>().material.SetVector("_LightDir", DirectionalLight.transform.eulerAngles);
        
@@ -58,7 +57,7 @@ public class CreateClouds : MonoBehaviour {
 
     // Update is called once per frame
     void Update () {
-        GetComponent<Renderer>().material.SetVector("_Pos", transform.position);
+        //GetComponent<Renderer>().material.SetVector("_Pos", transform.position);
 
         
 	}
@@ -116,6 +115,7 @@ public class CreateClouds : MonoBehaviour {
         Vector3 point3 = new Vector3(size / 2, size / 2, size / 2);
         Vector3 point4 = new Vector3(point3.x + 40f, point3.y, point3.z);
         Vector3 point5 = new Vector3(point3.x - 40f, point3.y, point3.z);
+        Vector3 point6 = new Vector3(point1.x + 40f, point1.y, point3.z + 40f);
 
         for (int x = 0; x < size; x++)
         {
@@ -127,9 +127,14 @@ public class CreateClouds : MonoBehaviour {
                     Vector3 currentPos = new Vector3(x, y, z);
 
 
-                    if (Vector3.Distance(currentPos, point1) < 80 || Vector3.Distance(currentPos, point2) < 80 || Vector3.Distance(currentPos, point3) < 80 || Vector3.Distance(currentPos, point4) < 80 || Vector3.Distance(currentPos, point5) < 80)
+                    if (Vector3.Distance(currentPos, point1) < 80 
+                        || Vector3.Distance(currentPos, point2) < 80 
+                        || Vector3.Distance(currentPos, point3) < 80 
+                        || Vector3.Distance(currentPos, point4) < 80 
+                        || Vector3.Distance(currentPos, point5) < 80
+                        || Vector3.Distance(currentPos, point6) < 80)
                     {
-                        c = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+                        c = new Color(cumulusAbsorb, cumulusScatter, 1.0f, 1.0f);
                     }
                     else
                     {
