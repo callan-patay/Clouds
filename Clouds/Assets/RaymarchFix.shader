@@ -234,7 +234,6 @@
 
 	float g = 0.0f;
 	float M_PI = 3.14159;
-	float M_TWO_PI = 6.28318;
 
 	float eval(const float3 wo, const float3 wi)
 	{
@@ -242,16 +241,23 @@
 		return  (1.0f / (4.0f * M_PI)) *((1.0f - (g * g)) / (k * sqrt(k)));
 	}
 
-	float HG()
-	{
+	float HG(Ray r, float randValue)
+	{	
+		float M_TWO_PI = M_PI * 2;
+		float s1 = random(randValue);
+		float s2 = random(s1);
 		float costheta;
 		costheta = (1.0f - (g * g)) / (1.0f - g + (2.0f * g * s1));
 		costheta = (1.0f + (g * g) - (costheta * costheta)) / (2.0f * g);
 		float sintheta;
-		sintheta = sqrtf(1.0f - (costheta * costheta));
+		sintheta = sqrt(1.0f - (costheta * costheta));
 		float phi;
 		phi = s2 * M_TWO_PI;
-		wi = float3(sintheta * cos(phi), sintheta * sin(phi), costheta);
+		
+		float3 wi = float3(sintheta * cos(phi), sintheta * sin(phi), costheta);
+		float3 wo = normalize(wi - dot(wi, wo) * wo);
+
+		return 1.0f;
 	}
 
 
