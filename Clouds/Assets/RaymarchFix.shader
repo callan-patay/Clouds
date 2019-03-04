@@ -206,7 +206,7 @@
 	}
 	float3 _LightDir;
 
-	float sampleDistance(Ray r)
+	float sampleDistance(Ray r, inout float randValue)
 	{
 		float s = 0;
 
@@ -214,10 +214,10 @@
 		float cumulusAbsorb = 0.000000110804f;
 		float max = cumulusScatter + cumulusAbsorb;
 
-		float randValue = random(frac(r.origin.x + r.origin.y + r.origin.z));
+		randValue = random(randValue);// frac(r.origin.x + r.origin.y + r.origin.z));
 
 		float newRand = random(randValue);
-		while (true)
+		for (int i = 0; i < 10; i++)
 		{
 			s += -log(1 - randValue) / max;
 			newRand = random(randValue);
@@ -255,28 +255,85 @@
 		phi = s2 * M_TWO_PI;
 		
 		float3 wi = float3(sintheta * cos(phi), sintheta * sin(phi), costheta);
-		float3 wo = normalize(wi - dot(wi, wo) * wo);
+		
+		float4x4 wmatrix = unity_ObjectToWorld;
+
+
+
+		float3 v1 = { wmatrix[0][0], wmatrix[0][1], wmatrix[0][2] };
+		float3 v2 = { wmatrix[1][0], wmatrix[1][1], wmatrix[1][2] };
+		float3 v3 = { wmatrix[2][0], wmatrix[2][1], wmatrix[2][2] };
+
+
+
+
 
 		return 1.0f;
 	}
 
 
-	float3 computeDirectLighting(float3 pos)
+	float3 computeDirectLighting(float3 pos, float3 dirtosun, inout float randValue)
 	{
+		float s = 0;
 
+		float cumulusScatter = 0.0814896f;
+		float cumulusAbsorb = 0.000000110804f;
+		float max = cumulusScatter + cumulusAbsorb;
 
+		randValue = random(randValue);// frac(r.origin.x + r.origin.y + r.origin.z));
 
+		float newRand = random(randValue);
+		float3 sunLight = float3(10000, 10000, 10000);
+		for (int i = 0; i < 10; i++)
+		{
+			s += -log(1 - randValue) / max;
+			float3 newpos;
+			newpos = pos + (dirtosun * s);
+			if (outside(texCoordsFromPosition(newpos)))
+			{
+				return sunLight;
+			}
+			float2 sigma;
+			sigma = coefficients(newpos);
+			if (newRand > ((sigma.r + sigma.g) / max))
+			{
+				return float3(0, 0, 0);
+			}
+			randValue = random(newRand);
+		}
+		return sunLight;
+	}
 
+	float isotropicPF()
+	{
+		return (1.0f / (4.0f * 3.1412654f));
+	}
+
+	float isotropicPFPDF()
+	{
+		return (1.0f / (4.0f * 3.1412654f));
+	}
+
+	float3 sampleIsotropic(inout float randValue)
+	{
+		float s1 = random(randValue);
+		randValue = random(s1);
+		float theta;
+		float phi;
+		theta = s1 * M_PI;
+		phi = acos(1.0 - 2.0 * randValue);
+		return float3(cos(phi) * sin(theta), sin(theta) * sin(phi), cos(theta));
 	}
 
 
 	float3 trace(Ray r)
 	{
+		float randValue = random(frac(r.origin.x + r.origin.y + r.origin.z)));
 		float3 paththrougput = (1.0f, 1.0f, 1.0f);
 		float4 colour = (0.0f, 0.0f, 0.0f, 0.0f);
 		for (int i = 0; i < 10; i++)
 		{
-			float distance = sampleDistance(r);
+			float distance = sampleDistance(r, randValue);
 			r.origin += r.dir * distance;
 			if (outside(texCoordsFromPosition(r.origin)))
 			{
@@ -284,9 +341,16 @@
 			}
 			else
 			{
-
+				float2 sigma;
+				sigma = coefficients(r.origin);
+				// Direct
+				colour = colour + float4((paththrougput * computeDirectLighting(r.origin, -_LightDir, randValue) * sigma.g * isotropicPF()), 1);
+				float3 dir;
+				dir = sampleIsotropic(randValue);
+				paththrougput = paththrougput * sigma.g * isotropicPF() / isotropicPFPDF();
+				r.dir = dir;
 			}
-
+			
 		}
 
 		// 1 While path not terminated
@@ -295,6 +359,7 @@
 		// otherwise calculate direct lighting and add
 		// sample phase function
 		// goto 1
+		return colour;
 	}
 
 	fixed4 frag(v2f i) : SV_Target
@@ -305,8 +370,9 @@
 		ray.origin = worldPosition;// mul(unity_WorldToObject, float4(worldPosition, 1.0)).xyz;
 		ray.dir = viewDirection;// mul(unity_WorldToObject, float4(viewDirection, 0)).xyz;
 
-		float4 tp = raymarchHit(ray);
-		return tp;
+		//float4 tp = raymarchHit(ray);
+		//return tp;
+		return float4(trace(ray), 1);
 	}
 		ENDCG
 	}
