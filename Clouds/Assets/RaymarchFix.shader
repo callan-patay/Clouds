@@ -9,6 +9,7 @@
 		_SliceMax("Slice max", Vector) = (1.0, 1.0, 1.0, -1.0)
 		_Color("Color", Color) = (1, 1, 1, 1)
 		_LightDir("LightDir", Vector) = (0.0, 0.0, 0.0, -1.0)
+		g("g", Float) = 0.8
 
 	}
 		SubShader
@@ -101,7 +102,7 @@
 	//half3 _Scale;
 	//half3 _Pos;
 
-	bool outside(float3 uv)
+	bool outsideTexture(float3 uv)
 	{
 		const float EPSILON = 0.01;
 		float lower = -EPSILON;
@@ -144,7 +145,7 @@
 			{
 				return density;
 			}*/	
-			if (outside(p))
+			if (outsideTexture(p))
 			{
 				return density;
 			}
@@ -217,6 +218,7 @@
 		randValue = random(randValue);// frac(r.origin.x + r.origin.y + r.origin.z));
 
 		float newRand = random(randValue);
+		int intersected = 0;
 		for (int i = 0; i < 10; i++)
 		{
 			s += -log(1 - randValue) / max;
@@ -225,14 +227,19 @@
 			sigma = coefficients(r.origin + (s * r.dir));
 			if(newRand < ((sigma.r + sigma.g) / max))
 			{ 
+				intersected = 1;
 				break;
 			}
 			randValue = random(newRand);
 		}
-		return s;
+		if (intersected == 1)
+		{
+			return s;
+		}
+		return 1000000000.0f;
 	}
 
-	float g = 0.0f;
+	float g = 0.8;
 	float M_PI = 3.14159;
 
 	float eval(const float3 wo, const float3 wi)
@@ -241,7 +248,34 @@
 		return  (1.0f / (4.0f * M_PI)) *((1.0f - (g * g)) / (k * sqrt(k)));
 	}
 
-	float HG(Ray r, float randValue)
+	float3x3 createOrthonormalbasis(float3 v1)
+	{
+		float3 v2;
+		float3 v3;
+		if (abs(v1.x) > abs(v1.y))
+		{
+			float invlength = 1.0f / sqrt(v1.x*v1.x + v1.z*v1.z);
+			v2 = float3(-v1.z * invlength, 0.0f, v1.x * invlength);
+		}
+		else
+		{
+			float invLength = 1.0f / sqrt(v1.y*v1.y + v1.z*v1.z);
+			v2 = float3(0.0f, v1.z*invLength, -v1.y * invLength);
+		}
+
+		v3 = cross(v1, v2);
+
+
+		float3x3 OMatrix = 
+		{
+			v2.x, v2.y, v2.z,
+			v3.x, v3.y, v3.z,
+			v1.x, v1.y, v1.z
+		};
+
+		return OMatrix;
+	}
+	float3 HG(Ray r, float randValue)
 	{	
 		float M_TWO_PI = M_PI * 2;
 		float s1 = random(randValue);
@@ -255,21 +289,16 @@
 		phi = s2 * M_TWO_PI;
 		
 		float3 wi = float3(sintheta * cos(phi), sintheta * sin(phi), costheta);
-		
-		float4x4 wmatrix = unity_ObjectToWorld;
+	
+		float3x3 Omatrix = createOrthonormalbasis(r.dir);
 
+		float3 wiglobal = mul(Omatrix, wi);
 
-
-		float3 v1 = { wmatrix[0][0], wmatrix[0][1], wmatrix[0][2] };
-		float3 v2 = { wmatrix[1][0], wmatrix[1][1], wmatrix[1][2] };
-		float3 v3 = { wmatrix[2][0], wmatrix[2][1], wmatrix[2][2] };
-
-
-
-
-
-		return 1.0f;
+		return wiglobal;
 	}
+
+
+
 
 
 	float3 computeDirectLighting(float3 pos, float3 dirtosun, inout float randValue)
@@ -289,7 +318,7 @@
 			s += -log(1 - randValue) / max;
 			float3 newpos;
 			newpos = pos + (dirtosun * s);
-			if (outside(texCoordsFromPosition(newpos)))
+			if (outsideTexture(texCoordsFromPosition(newpos)))
 			{
 				return sunLight;
 			}
@@ -326,16 +355,17 @@
 	}
 
 
-	float3 trace(Ray r)
+	float4 trace(Ray r)
 	{
-		float randValue = random(frac(r.origin.x + r.origin.y + r.origin.z)));
+		float randValue = random(frac(r.origin.x + r.origin.y + r.origin.z));
 		float3 paththrougput = (1.0f, 1.0f, 1.0f);
 		float4 colour = (0.0f, 0.0f, 0.0f, 0.0f);
+		_LightDir = normalize(_LightDir);
 		for (int i = 0; i < 10; i++)
 		{
 			float distance = sampleDistance(r, randValue);
 			r.origin += r.dir * distance;
-			if (outside(texCoordsFromPosition(r.origin)))
+			if (outsideTexture(texCoordsFromPosition(r.origin)))
 			{
 				break;
 			}
@@ -344,21 +374,14 @@
 				float2 sigma;
 				sigma = coefficients(r.origin);
 				// Direct
-				colour = colour + float4((paththrougput * computeDirectLighting(r.origin, -_LightDir, randValue) * sigma.g * isotropicPF()), 1);
+				colour = colour + float4((paththrougput * computeDirectLighting(r.origin, -_LightDir, randValue) * sigma.g * eval(-r.dir, -_LightDir)), 1);
 				float3 dir;
-				dir = sampleIsotropic(randValue);
-				paththrougput = paththrougput * sigma.g * isotropicPF() / isotropicPFPDF();
+				dir = HG(r, randValue);
+				paththrougput = paththrougput * sigma.g;
 				r.dir = dir;
 			}
 			
 		}
-
-		// 1 While path not terminated
-		// Sample distance (wwodcock)
-		// if outside cloud break
-		// otherwise calculate direct lighting and add
-		// sample phase function
-		// goto 1
 		return colour;
 	}
 
@@ -372,7 +395,7 @@
 
 		//float4 tp = raymarchHit(ray);
 		//return tp;
-		return float4(trace(ray), 1);
+		return trace(ray);
 	}
 		ENDCG
 	}

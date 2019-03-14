@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_Name: Clouds
-  m_Shader: {fileID: 4800000, guid: c3248db8e2c1f64409c74abdc7009844, type: 3}
+  m_Shader: {fileID: 4800000, guid: d2bf541a64dd2a247b27d35eeb4481f0, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -58,6 +58,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _Volume1:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Floats:
     - _BumpScale: 1
     - _Centre: 0
@@ -95,9 +99,11 @@ Material:
     - _steps: 128
     - _threshold: 1
     - _volumeScale: 1
+    - g: 0.8
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _LightDir: {r: 0, g: 0, b: 0, a: -1}
     - _SliceMax: {r: 1, g: 1, b: 1, a: -1}
     - _SliceMin: {r: 0, g: 0, b: 0, a: -1}
     - _camera: {r: 0, g: 0, b: 0, a: 1}
