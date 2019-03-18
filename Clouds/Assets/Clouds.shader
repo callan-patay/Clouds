@@ -85,8 +85,8 @@
 
 				float2 coefficients(float3 wpos)
 				{
-					float3 npos = mul(unity_WorldToObject, float4(wpos, 1.0)).xyz + float3(0.5, 0.5, 0.5);
-					return tex3D(_Volume, npos).rg;
+					//float3 npos = mul(unity_WorldToObject, float4(wpos, 1.0)).xyz + float3(0.5, 0.5, 0.5);
+					return tex3D(_Volume, texCoordsFromPosition(wpos)).rg;
 				}
 
 				float sampleDistance(Ray r, inout float randValue)
@@ -172,9 +172,9 @@
 					float3 wi = float3(sintheta * cos(phi), sintheta * sin(phi), costheta);
 
 					float3x3 Omatrix = createOrthonormalbasis(r.dir);
-					//Omatrix = transpose(Omatrix);
+					Omatrix = transpose(Omatrix);
 
-					float3 wiglobal = mul(transpose(Omatrix), wi);
+					float3 wiglobal = mul(Omatrix, wi);
 
 					return wiglobal;
 				}
@@ -193,6 +193,7 @@
 					float3 sunLight = float3(10000, 10000, 10000);
 					for (int i = 0; i < 10; i++)
 					{
+						randValue = random(newRand);
 						s += -log(1 - randValue) / max;
 						float3 newpos;
 						newpos = pos + (dirtosun * s);
@@ -206,7 +207,7 @@
 						{
 							return float3(0, 0, 0);
 						}
-						randValue = random(newRand);
+						
 					}
 					return sunLight;
 				}
@@ -217,8 +218,12 @@
 					float randValue = random(frac(r.origin.x + r.origin.y + r.origin.z));
 					float3 paththrougput = (1.0f, 1.0f, 1.0f);
 					float4 colour = (0.0f, 0.0f, 0.0f, 0.0f);
+
+					float newRand = random(randValue);
+
 					for (int i = 0; i < 10; i++)
 					{
+
 						float distance = sampleDistance(r, randValue);
 						r.origin += r.dir * distance;
 						if (outsideTexture(texCoordsFromPosition(r.origin)))
@@ -229,9 +234,9 @@
 						{
 							float2 sigma;
 							sigma = coefficients(r.origin);
-							colour = colour + float4((paththrougput * computeDirectLighting(r.origin, -lightDir, randValue) * sigma.g * eval(-r.dir, -lightDir)), 1);
+							colour = colour + float4((paththrougput * computeDirectLighting(r.origin, -lightDir, newRand) * sigma.g * eval(-r.dir, -lightDir)), 1);
 							float3 dir;
-							dir = HG(r, randValue);
+							dir = HG(r, newRand);
 							paththrougput = paththrougput * sigma.g;
 							r.dir = dir;
 						}

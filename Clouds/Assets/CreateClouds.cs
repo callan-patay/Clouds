@@ -45,8 +45,6 @@ public class CreateClouds : MonoBehaviour {
 
 
         GetComponent<Renderer>().material.SetTexture("_Volume", _texture);
-        //GetComponent<Renderer>().material.SetTexture("_Volume1", _texture1);
-      //  GetComponent<Renderer>().material.SetMatrix("_AxisRotationMatrix", Matrix4x4.Rotate(axis));
         GetComponent<Renderer>().material.SetVector("_LightDir", DirectionalLight.transform.eulerAngles);
        
     }
@@ -126,13 +124,13 @@ public class CreateClouds : MonoBehaviour {
                     Vector3 currentPos = new Vector3(x, y, z);
 
 
-                    if (Vector3.Distance(currentPos, point1) < 80
-                        || Vector3.Distance(currentPos, point2) < 80
-                        || Vector3.Distance(currentPos, point3) < 80
-                        || Vector3.Distance(currentPos, point4) < 80
-                        || Vector3.Distance(currentPos, point5) < 80
-                        || Vector3.Distance(currentPos, point6) < 80)
-                       // if (Vector3.Distance(currentPos, point3) < 80) 
+                    //if (Vector3.Distance(currentPos, point1) < 80
+                    //    || Vector3.Distance(currentPos, point2) < 80
+                    //    || Vector3.Distance(currentPos, point3) < 80
+                    //    || Vector3.Distance(currentPos, point4) < 80
+                    //    || Vector3.Distance(currentPos, point5) < 80
+                    //    || Vector3.Distance(currentPos, point6) < 80)
+                        if (Vector3.Distance(currentPos, point3) < 80) 
                     {
                         c = new Color(cumulusAbsorb, cumulusScatter, 1.0f, 1.0f);
                     }

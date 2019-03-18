@@ -5,9 +5,10 @@ Shader "Custom/RayMarch" {
 
 	Properties
 	{
-		_Radius("Radius", float) = 1
-		_Centre("Centre", float) = 0
+
 		_Volume("Texture", 3D) = "" {}
+		_Color("Color", Color) = (1, 1, 1, 1)
+		_Threshold("Threshold", Range(0.0, 1.0)) = 0.95
 	}
 		SubShader
 	{
@@ -27,11 +28,8 @@ Shader "Custom/RayMarch" {
 
 			#include "UnityCG.cginc"
 
-			sampler2D _MainTex;
-			float _Radius;
-			float _Centre;
 
-			#define STEPS 10
+			#define STEPS 100
 			#define STEP_SIZE 0.01
 
 			struct appdata {
@@ -43,8 +41,15 @@ Shader "Custom/RayMarch" {
 				float3 wPos : TEXCOORD1; // World Position
 			};
 
+			struct Ray {
+				float3 origin;
+				float3 dir;
+			};
+
 
 			sampler3D _Volume;
+			half _Threshold;
+			half4 _Color;
 
 			v2f vert(appdata v) {
 				v2f o;
@@ -53,45 +58,61 @@ Shader "Custom/RayMarch" {
 				return o;
 			}
 
-			bool sphereHit(float3 p) {
-				return distance(p, _Centre) < _Radius;
-			}
-
 			float3 texCoordsFromPosition(float3 position)
 			{
-				return position;
+				float3 npos = mul(unity_WorldToObject, float4(position, 1.0)).xyz;
+				return npos + float3(0.5, 0.5, 0.5);
 			}
 
-			float raymarchHit(float3 position, float3 direction) {
-				float density = 0;
+			bool outsideTexture(float3 uv)
+			{
+				const float EPSILON = 0.01;
+				float lower = -EPSILON;
+				float upper = 1 + EPSILON;
+				return (
+					uv.x < lower || uv.y < lower || uv.z < lower ||
+					uv.x > upper || uv.y > upper || uv.z > upper
+					);
+			}
+
+			fixed4 raymarchHit(Ray r) {
+
+				float4 density = (0.0, 0.0, 0.0, 0.0);
+
 				for (int i = 0; i < STEPS; i++)
 				{
-				/*if (sphereHit(position)) 
-				{
-					return true;
-				}*/
-					float3 p = texCoordsFromPosition(position);
-					if (p.x < 0 || p.x > 1.0 || p.y < 0 || p.y > 1.0 || p.z < 0 || p.z > 1.0)
+
+					float3 p = texCoordsFromPosition(r.origin);
+
+					if (outsideTexture(p))
 					{
 						return density;
 					}
-					float4 texel = tex3D(_Volume, texCoordsFromPosition(position));
-					if (texel.r > 0)
-					{
-						return 1;
-					}
+					float4 texel = tex3D(_Volume, texCoordsFromPosition(r.origin));
 					density += texel.r / STEPS;
-					position += direction * STEP_SIZE;
+					//density = 1.0f;
+					r.origin += r.dir * STEP_SIZE;
+
+
+					if (density.a > _Threshold) break;
+
+
+
+
 				}
-				return density;
+				return saturate(density) * _Color;
+				//return density;
 			}
 
 			fixed4 frag(v2f i) : SV_Target
 			{
+				Ray ray;
 				float3 worldPosition = i.wPos;
 				float3 viewDirection = normalize(i.wPos - _WorldSpaceCameraPos);
-				float tp = raymarchHit(worldPosition, viewDirection);
-				return (tp, tp, tp, tp); 
+				ray.origin = worldPosition;// mul(unity_WorldToObject, float4(worldPosition, 1.0)).xyz;
+				ray.dir = viewDirection;// mul(unity_WorldToObject, float4(viewDirection, 0)).xyz;
+
+				return raymarchHit(ray);
 		  }
 		  ENDCG
 	  }
