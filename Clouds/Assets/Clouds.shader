@@ -143,7 +143,13 @@
 						v2 = float3(0.0f, v1.z*invLength, -v1.y * invLength);
 					}
 
+
+
+
+					//v1 = normalize(v1);
+					//v2 = normalize(v2);
 					v3 = cross(v1, v2);
+					//v3 = normalize(v3);
 
 
 					float3x3 OMatrix =

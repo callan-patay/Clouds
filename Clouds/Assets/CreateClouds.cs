@@ -10,7 +10,7 @@ public class CreateClouds : MonoBehaviour {
 
     public Quaternion axis = Quaternion.identity;
     public GameObject DirectionalLight;
-
+    public bool PerlinOn = true;
     private float cumulusScatter;
     private float cumulusAbsorb;
 
@@ -21,8 +21,14 @@ public class CreateClouds : MonoBehaviour {
     {
         cumulusScatter = 0.0814896f;
         cumulusAbsorb = 0.000000110804f;
-        _texture = generateVolume(256);
-
+        if (PerlinOn)
+        {
+            _texture = generateClouds1(256);
+        }
+        else
+        {
+            _texture = generateVolume(256);
+        }
         /* rgb's
          * 
          * cumulus scattering 0.0814896 red channel
@@ -53,7 +59,7 @@ public class CreateClouds : MonoBehaviour {
     // https://github.com/fleity/VolumeDemo/blob/master/Assets/Shaders/raymarch_simple.shader
 
     // Update is called once per frame
-    void Update () {
+    void FixedUpdate () {
 
 
         GetComponent<Renderer>().material.SetVector("_LightDir", DirectionalLight.transform.eulerAngles);
@@ -71,18 +77,18 @@ public class CreateClouds : MonoBehaviour {
             {
                 for (int z = 0; z < size; z++)
                 {
-                    float p = Perlin3D((float)x * r, (float)y * r, (float)z * r, 8.0f);
+                    float p = Perlin3D((float)x * r, (float)y * r, (float)z * r, 1.0f);
                     float p1 = Perlin3D((float)x * r, (float)y * r, (float)z * r, 6.0f);
 
                     Color c; //= new Color(0.0f, 0.0f, 0.0f, 1.0f);
 
                     if (p > 0.5)
                     {
-                        c = new Color(cumulusScatter, cumulusAbsorb, 0, 1.0f);
+                        c = new Color(cumulusAbsorb, cumulusScatter, 1.0f, 1.0f);
                     }
                     else if (p1 > 0.5)
                     {
-                        c = new Color(cumulusScatter, cumulusAbsorb, 0, 1.0f);
+                        c = new Color(cumulusAbsorb, cumulusScatter, 1.0f, 1.0f);
                     }
                     else
                     {
@@ -124,13 +130,13 @@ public class CreateClouds : MonoBehaviour {
                     Vector3 currentPos = new Vector3(x, y, z);
 
 
-                    //if (Vector3.Distance(currentPos, point1) < 80
-                    //    || Vector3.Distance(currentPos, point2) < 80
-                    //    || Vector3.Distance(currentPos, point3) < 80
-                    //    || Vector3.Distance(currentPos, point4) < 80
-                    //    || Vector3.Distance(currentPos, point5) < 80
-                    //    || Vector3.Distance(currentPos, point6) < 80)
-                        if (Vector3.Distance(currentPos, point3) < 80) 
+                    if (Vector3.Distance(currentPos, point1) < 80
+                        || Vector3.Distance(currentPos, point2) < 80
+                        || Vector3.Distance(currentPos, point3) < 80
+                        || Vector3.Distance(currentPos, point4) < 80
+                        || Vector3.Distance(currentPos, point5) < 80
+                        || Vector3.Distance(currentPos, point6) < 80)
+                    //if (Vector3.Distance(currentPos, point3) < 80) 
                     {
                         c = new Color(cumulusAbsorb, cumulusScatter, 1.0f, 1.0f);
                     }
