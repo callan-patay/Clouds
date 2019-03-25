@@ -89,6 +89,7 @@
 					return tex3D(_Volume, texCoordsFromPosition(wpos)).rg;
 				}
 
+				//woodcock tracking
 				float sampleDistance(Ray r, inout float randValue)
 				{
 					float s = 0;
@@ -109,15 +110,11 @@
 						sigma = coefficients(r.origin + (s * r.dir));
 						if (newRand < ((sigma.r + sigma.g) / max))
 						{
-							intersected = 1;
-							break;
+							return s;
 						}
 						randValue = random(newRand);
 					}
-					if (intersected == 1)
-					{
-						return s;
-					}
+
 					return 1000000000.0f;
 				}
 
@@ -143,14 +140,10 @@
 						v2 = float3(0.0f, v1.z*invLength, -v1.y * invLength);
 					}
 
-
-
-
 					//v1 = normalize(v1);
 					//v2 = normalize(v2);
 					v3 = cross(v1, v2);
 					//v3 = normalize(v3);
-
 
 					float3x3 OMatrix =
 					{
@@ -193,16 +186,16 @@
 					float cumulusAbsorb = 0.000000110804f;
 					float max = cumulusScatter + cumulusAbsorb;
 
-					randValue = random(randValue);// frac(r.origin.x + r.origin.y + r.origin.z));
+					randValue = random(randValue);
 
 					float newRand = random(randValue);
 					float3 sunLight = float3(10000, 10000, 10000);
+					float3 newpos = pos;
 					for (int i = 0; i < 10; i++)
 					{
 						randValue = random(newRand);
 						s += -log(1 - randValue) / max;
-						float3 newpos;
-						newpos = pos + (dirtosun * s);
+						newpos = newpos + (dirtosun * s);
 						if (outsideTexture(texCoordsFromPosition(newpos)))
 						{
 							return sunLight;
@@ -212,8 +205,7 @@
 						if (newRand > ((sigma.r + sigma.g) / max))
 						{
 							return float3(0, 0, 0);
-						}
-						
+						}					
 					}
 					return sunLight;
 				}
