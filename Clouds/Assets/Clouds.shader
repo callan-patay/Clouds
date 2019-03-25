@@ -205,7 +205,8 @@
 						if (newRand > ((sigma.r + sigma.g) / max))
 						{
 							return float3(0, 0, 0);
-						}					
+						}	
+
 					}
 					return sunLight;
 				}
@@ -221,7 +222,7 @@
 
 					for (int i = 0; i < 10; i++)
 					{
-
+						newRand = random(randValue);
 						float distance = sampleDistance(r, randValue);
 						r.origin += r.dir * distance;
 						if (outsideTexture(texCoordsFromPosition(r.origin)))
@@ -232,13 +233,13 @@
 						{
 							float2 sigma;
 							sigma = coefficients(r.origin);
-							colour = colour + float4((paththrougput * computeDirectLighting(r.origin, -lightDir, newRand) * sigma.g * eval(-r.dir, -lightDir)), 1);
+							colour = colour + float4((paththrougput * computeDirectLighting(r.origin, -lightDir, newRand) * sigma.g * eval(r.dir, -lightDir)), 1);
 							float3 dir;
 							dir = HG(r, newRand);
 							paththrougput = paththrougput * sigma.g;
 							r.dir = dir;
 						}
-
+						randValue = random(newRand);
 					}
 					return colour;
 				}
