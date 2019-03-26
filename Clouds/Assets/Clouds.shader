@@ -18,6 +18,8 @@
 				// Use shader model 3.0 target, to get nicer looking lighting
 				#include "UnityCG.cginc"
 				//#pragma target 3.0
+				#pragma exclude_renderers d3d11_9x
+				#pragma exclude_renderers d3d9
 
 				struct appdata {
 					float4 vertex : POSITION;
@@ -119,11 +121,7 @@
 				}
 
 
-				float eval(const float3 wo, const float3 wi)
-				{
-					const float k = 1.0f + (g * g) - (2.0f * g * dot(wi, wo));
-					return  (1.0f / (4.0f * M_PI)) *((1.0f - (g * g)) / (k * sqrt(k)));
-				}
+			
 
 				float3x3 createOrthonormalbasis(float3 v1)
 				{
@@ -155,6 +153,12 @@
 					return OMatrix;
 				}
 
+				float eval(const float3 wo, const float3 wi)
+				{
+					const float k = 1.0f + (g * g) - (2.0f * g * dot(wi, wo));
+					return  (1.0f / (4.0f * M_PI)) *((1.0f - (g * g)) / (k * sqrt(k)));
+				}
+
 				float3 HG(Ray r, float randValue)
 				{
 					float M_TWO_PI = M_PI * 2;
@@ -178,7 +182,23 @@
 					return wiglobal;
 				}
 
-				float3 computeDirectLighting(float3 pos, float3 dirtosun, inout float randValue)
+				float isotropicPF()
+				{
+					return (1.0f / (4.0f * 3.1412654f));
+				}
+
+				float3 sampleIsotropic(inout float randValue)
+				{
+					float s1 = random(randValue);
+					randValue = random(s1);
+					float theta;
+					float phi;
+					theta = s1 * M_PI;
+					phi = acos(1.0 - 2.0 * randValue);
+					return float3(cos(phi) * sin(theta), sin(theta) * sin(phi), cos(theta));
+				}
+
+				float computeAttenuation(float3 pos, float3 dirtosun, inout float randValue)
 				{
 					float s = 0;
 
@@ -189,37 +209,52 @@
 					randValue = random(randValue);
 
 					float newRand = random(randValue);
-					float3 sunLight = float3(10000, 10000, 10000);
-					float3 newpos = pos;
+
+					[loop]
 					for (int i = 0; i < 10; i++)
-					{
+					{ 
 						randValue = random(newRand);
 						s += -log(1 - randValue) / max;
-						newpos = newpos + (dirtosun * s);
-						if (outsideTexture(texCoordsFromPosition(newpos)))
+						float3 newPos;
+						newPos = pos + (dirtosun * s);
+						if (outsideTexture(texCoordsFromPosition(newPos)))
 						{
-							return sunLight;
+							return 1;
 						}
 						float2 sigma;
-						sigma = coefficients(newpos);
+						sigma = coefficients(newPos);
 						if (newRand > ((sigma.r + sigma.g) / max))
 						{
-							return float3(0, 0, 0);
-						}	
-
+							return 0;
+						}
+						 
 					}
-					return sunLight;
+					return 1.0f;
+				}
+
+				float3 computeDirectLighting(float3 pos, float3 dirtosun, inout float randValue)
+				{
+					float att = 0;
+					float3 sunLight = float3(10000, 10000, 10000);
+					[loop]
+					for (int i = 0; i < 10; i++)
+					{
+						att = att + computeAttenuation(pos, dirtosun, randValue);
+					}
+					att = att / 10.0f;
+					return (sunLight * att);
 				}
 
 
 				float4 trace(Ray r, float3 lightDir)
 				{
-					float randValue = random(frac(r.origin.x + r.origin.y + r.origin.z));
+					float randValue = random(frac(r.origin.x + r.origin.y + r.origin.z) /*+ _Time*/);
 					float3 paththrougput = (1.0f, 1.0f, 1.0f);
 					float4 colour = (0.0f, 0.0f, 0.0f, 0.0f);
 
 					float newRand = random(randValue);
 
+					[loop]
 					for (int i = 0; i < 10; i++)
 					{
 						newRand = random(randValue);
@@ -233,10 +268,10 @@
 						{
 							float2 sigma;
 							sigma = coefficients(r.origin);
-							colour = colour + float4((paththrougput * computeDirectLighting(r.origin, -lightDir, newRand) * sigma.g * eval(r.dir, -lightDir)), 1);
+							colour = colour + float4((paththrougput * computeDirectLighting(r.origin, -lightDir, newRand) * sigma.g * eval(-r.dir, -lightDir)), 1);
 							float3 dir;
-							dir = HG(r, newRand);
-							paththrougput = paththrougput * sigma.g;
+							dir = sampleIsotropic(newRand);// HG(r, newRand);
+							paththrougput = paththrougput * sigma.g / isotropicPF();
 							r.dir = dir;
 						}
 						randValue = random(newRand);
@@ -252,7 +287,8 @@
 					ray.origin = worldPosition;// mul(unity_WorldToObject, float4(worldPosition, 1.0)).xyz;
 					ray.dir = viewDirection;// mul(unity_WorldToObject, float4(viewDirection, 0)).xyz;
 					_LightDir = normalize(_LightDir);
-					return trace(ray, _LightDir);
+					//_WorldSpaceLightPos0 = normalize(_WorldSpaceLightPos0);
+					return trace(ray, _WorldSpaceLightPos0);
 				}
 				
 				ENDCG

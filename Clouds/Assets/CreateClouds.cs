@@ -10,6 +10,7 @@ public class CreateClouds : MonoBehaviour {
 
     public Quaternion axis = Quaternion.identity;
     public GameObject DirectionalLight;
+   // public UI
     public bool PerlinOn = true;
     private float cumulusScatter;
     private float cumulusAbsorb;
@@ -29,6 +30,9 @@ public class CreateClouds : MonoBehaviour {
         {
             _texture = generateVolume(256);
         }
+
+
+      //  _texture.filterMode = FilterMode.Bilinear;
         /* rgb's
          * 
          * cumulus scattering 0.0814896 red channel
@@ -47,11 +51,13 @@ public class CreateClouds : MonoBehaviour {
          * 
          * */
 
-       
+       //multiple render targets
+       //check if cloud or no cloud, 0 or 1
+
 
 
         GetComponent<Renderer>().material.SetTexture("_Volume", _texture);
-        GetComponent<Renderer>().material.SetVector("_LightDir", DirectionalLight.transform.eulerAngles);
+        //GetComponent<Renderer>().material.SetVector("_LightDir", DirectionalLight.transform.eulerAngles);
        
     }
 
@@ -62,7 +68,7 @@ public class CreateClouds : MonoBehaviour {
     void FixedUpdate () {
 
 
-        GetComponent<Renderer>().material.SetVector("_LightDir", DirectionalLight.transform.eulerAngles);
+        //GetComponent<Renderer>().material.SetVector("_LightDir", DirectionalLight.transform.eulerAngles);
     }
     Texture3D generateClouds1(int size)
     {
@@ -136,8 +142,13 @@ public class CreateClouds : MonoBehaviour {
                         || Vector3.Distance(currentPos, point4) < 80
                         || Vector3.Distance(currentPos, point5) < 80
                         || Vector3.Distance(currentPos, point6) < 80)
-                    //if (Vector3.Distance(currentPos, point3) < 80) 
+                    //  if (Vector3.Distance(currentPos, point3) < 80) 
                     {
+
+                        float p = Perlin3D((float)x * r, (float)y * r, (float)z * r, 1.0f);
+                        float p1 = Perlin3D((float)x * r, (float)y * r, (float)z * r, 6.0f);
+                        float perlinScale = (p > 0.5 ? 1.0f : 0.0f);
+                        perlinScale = perlinScale * (p1 > 0.5 ? 1.0f : 0.0f);
                         c = new Color(cumulusAbsorb, cumulusScatter, 1.0f, 1.0f);
                     }
                     else
