@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class CreateClouds : MonoBehaviour {
 
@@ -10,7 +11,6 @@ public class CreateClouds : MonoBehaviour {
 
     public Quaternion axis = Quaternion.identity;
     public GameObject DirectionalLight;
-   // public UI
     public bool PerlinOn = true;
     private float cumulusScatter;
     private float cumulusAbsorb;
@@ -61,6 +61,10 @@ public class CreateClouds : MonoBehaviour {
        
     }
 
+    public void setG(Slider slider)
+    {
+        GetComponent<Renderer>().material.SetFloat("g", slider.value);
+    }
 
     // https://github.com/fleity/VolumeDemo/blob/master/Assets/Shaders/raymarch_simple.shader
 
