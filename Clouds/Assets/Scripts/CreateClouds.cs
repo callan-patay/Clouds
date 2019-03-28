@@ -11,6 +11,9 @@ public class CreateClouds : MonoBehaviour {
 
     public Quaternion axis = Quaternion.identity;
     public GameObject DirectionalLight;
+
+    private Renderer shader;
+
     public bool PerlinOn = true;
     private float cumulusScatter;
     private float cumulusAbsorb;
@@ -32,7 +35,7 @@ public class CreateClouds : MonoBehaviour {
         }
 
 
-      //  _texture.filterMode = FilterMode.Bilinear;
+        //  _texture.filterMode = FilterMode.Bilinear;
         /* rgb's
          * 
          * cumulus scattering 0.0814896 red channel
@@ -51,19 +54,20 @@ public class CreateClouds : MonoBehaviour {
          * 
          * */
 
-       //multiple render targets
-       //check if cloud or no cloud, 0 or 1
+        //multiple render targets
+        //check if cloud or no cloud, 0 or 1
 
 
-
-        GetComponent<Renderer>().material.SetTexture("_Volume", _texture);
+        shader = GetComponent<Renderer>();
+        shader.material.SetTexture("_Volume", _texture);
         //GetComponent<Renderer>().material.SetVector("_LightDir", DirectionalLight.transform.eulerAngles);
        
     }
 
     public void setG(Slider slider)
     {
-        GetComponent<Renderer>().material.SetFloat("g", slider.value);
+        shader.material.SetFloat("_g", slider.value);
+        
     }
 
     // https://github.com/fleity/VolumeDemo/blob/master/Assets/Shaders/raymarch_simple.shader
@@ -71,7 +75,7 @@ public class CreateClouds : MonoBehaviour {
     // Update is called once per frame
     void FixedUpdate () {
 
-
+        shader.material.SetFloat("_LightIntensity", DirectionalLight.GetComponent<Light>().intensity);
         //GetComponent<Renderer>().material.SetVector("_LightDir", DirectionalLight.transform.eulerAngles);
     }
     Texture3D generateClouds1(int size)
@@ -146,7 +150,7 @@ public class CreateClouds : MonoBehaviour {
                         || Vector3.Distance(currentPos, point4) < 80
                         || Vector3.Distance(currentPos, point5) < 80
                         || Vector3.Distance(currentPos, point6) < 80)
-                    //  if (Vector3.Distance(currentPos, point3) < 80) 
+                    //if (Vector3.Distance(currentPos, point3) < 80) 
                     {
 
                         float p = Perlin3D((float)x * r, (float)y * r, (float)z * r, 1.0f);

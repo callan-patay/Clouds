@@ -97,8 +97,6 @@ Shader "Custom/RayMarch" {
 					if (density.a > _Threshold) break;
 
 
-
-
 				}
 				return saturate(density) * _Color;
 				//return density;

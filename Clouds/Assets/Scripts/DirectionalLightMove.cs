@@ -10,6 +10,13 @@ public class DirectionalLightMove : MonoBehaviour {
 		
 	}
 	
+    public void setIntensity(Slider slider)
+    {
+        directional.intensity = slider.value;
+    }
+
+
+
     public void setDirectionalX(Slider slider)
     {
         directional.transform.eulerAngles = new Vector3(slider.value, directional.transform.eulerAngles.y, directional.transform.eulerAngles.z);
