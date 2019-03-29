@@ -6,10 +6,8 @@ using UnityEngine.UI;
 public class CreateClouds : MonoBehaviour {
 
 
-    [SerializeField]
     private Texture3D _texture;
 
-    public Quaternion axis = Quaternion.identity;
     public GameObject DirectionalLight;
 
     private Renderer shader;
@@ -19,6 +17,7 @@ public class CreateClouds : MonoBehaviour {
     private float cumulusAbsorb;
 
     public float scale = 20f;
+    public int textureScale = 256;
 
     // Use this for initialization
     void Start ()
@@ -27,11 +26,11 @@ public class CreateClouds : MonoBehaviour {
         cumulusAbsorb = 0.000000110804f;
         if (PerlinOn)
         {
-            _texture = generateClouds1(256);
+            _texture = generatePerlinClouds(textureScale);
         }
         else
         {
-            _texture = generateVolume(256);
+            _texture = generateVolume(textureScale);
         }
 
 
@@ -78,12 +77,11 @@ public class CreateClouds : MonoBehaviour {
         shader.material.SetFloat("_LightIntensity", DirectionalLight.GetComponent<Light>().intensity);
         //GetComponent<Renderer>().material.SetVector("_LightDir", DirectionalLight.transform.eulerAngles);
     }
-    Texture3D generateClouds1(int size)
+    Texture3D generatePerlinClouds(int size)
     {
         Color[] colorArray = new Color[size * size * size];
         Texture3D _texturetempt = new Texture3D(size, size, size, TextureFormat.RGBA32, false);
         float r = 1.0f / (size - 1.0f);
-
         
         for (int x = 0; x < size; x++)
         {
@@ -91,16 +89,15 @@ public class CreateClouds : MonoBehaviour {
             {
                 for (int z = 0; z < size; z++)
                 {
-                    float p = Perlin3D((float)x * r, (float)y * r, (float)z * r, 1.0f);
-                    float p1 = Perlin3D((float)x * r, (float)y * r, (float)z * r, 6.0f);
-
+                    //float p = Perlin3D((float)x * r, (float)y * r, (float)z * r, 1.0f);
+                    float p1 = Perlin3D((float)x * r, (float)y * r, (float)z * r, scale);
                     Color c; //= new Color(0.0f, 0.0f, 0.0f, 1.0f);
 
-                    if (p > 0.5)
-                    {
-                        c = new Color(cumulusAbsorb, cumulusScatter, 1.0f, 1.0f);
-                    }
-                    else if (p1 > 0.5)
+                    //if (p > 0.5)
+                    //{
+                    //    c = new Color(cumulusAbsorb, cumulusScatter, 1.0f, 1.0f);
+                    //}
+                    if (p1 > 0.5)
                     {
                         c = new Color(cumulusAbsorb, cumulusScatter, 1.0f, 1.0f);
                     }
@@ -144,13 +141,13 @@ public class CreateClouds : MonoBehaviour {
                     Vector3 currentPos = new Vector3(x, y, z);
 
 
-                    if (Vector3.Distance(currentPos, point1) < 80
-                        || Vector3.Distance(currentPos, point2) < 80
-                        || Vector3.Distance(currentPos, point3) < 80
-                        || Vector3.Distance(currentPos, point4) < 80
-                        || Vector3.Distance(currentPos, point5) < 80
-                        || Vector3.Distance(currentPos, point6) < 80)
-                    //if (Vector3.Distance(currentPos, point3) < 80) 
+                    //if (Vector3.Distance(currentPos, point1) < 80
+                    //    || Vector3.Distance(currentPos, point2) < 80
+                    //    || Vector3.Distance(currentPos, point3) < 80
+                    //    || Vector3.Distance(currentPos, point4) < 80
+                    //    || Vector3.Distance(currentPos, point5) < 80
+                    //    || Vector3.Distance(currentPos, point6) < 80)
+                    if (Vector3.Distance(currentPos, point3) < size/2) 
                     {
 
                         float p = Perlin3D((float)x * r, (float)y * r, (float)z * r, 1.0f);
