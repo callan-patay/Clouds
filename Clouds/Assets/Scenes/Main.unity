@@ -917,7 +917,7 @@ Light:
   serializedVersion: 8
   m_Type: 1
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
-  m_Intensity: 250
+  m_Intensity: 50
   m_Range: 10
   m_SpotAngle: 30
   m_CookieSize: 10
@@ -1281,7 +1281,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -134, y: 0}
+  m_AnchoredPosition: {x: -134, y: 470}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &562389848
@@ -1352,7 +1352,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 450, y: 200}
+  m_AnchoredPosition: {x: -314, y: -226}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &671153169
@@ -1739,8 +1739,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   DirectionalLight: {fileID: 332268468}
+  cloudSelection: 2
   PerlinOn: 1
-  scale: 15
+  PerlinNoisescale: 20
   textureScale: 256
 --- !u!1 &837849298
 GameObject:
@@ -2229,7 +2230,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 353.5, y: -31.1}
+  m_AnchoredPosition: {x: -53, y: -200}
   m_SizeDelta: {x: 92.79, y: 17.28}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1055849085
@@ -3160,7 +3161,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 353.5, y: -121.7}
+  m_AnchoredPosition: {x: 315, y: -164}
   m_SizeDelta: {x: 92.79, y: 17.28}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2067748673

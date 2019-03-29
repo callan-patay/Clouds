@@ -5,6 +5,7 @@
 		_g("g", Float) = 0.8
 		_LightIntensity("LightIntensity", Float) = 100
 		_Factor("Factor", Range(0, 5)) = 1.0
+		_Max("Max", Float) = 0.0
 	}
 		SubShader{
 			Tags{ "Queue" = "Transparent" "RenderType" = "Transparent" }
@@ -41,6 +42,7 @@
 					sampler3D _Volume;
 					float3 _LightDir;
 					float _LightIntensity;
+					float _Max;
 					float3 sunLight;
 					sampler2D _GrabTexture;
 					float4 _GrabTexture_TexelSize;
@@ -105,9 +107,9 @@
 					{
 						float s = 0;
 
-						float cumulusScatter = 0.0814896f;
-						float cumulusAbsorb = 0.000000110804f;
-						float max = cumulusScatter + cumulusAbsorb;
+						//float cumulusScatter = 0.0814896f;
+						//float cumulusAbsorb = 0.000000110804f;
+						//float max = cumulusScatter + cumulusAbsorb;
 
 						randValue = random(randValue);
 
@@ -115,11 +117,11 @@
 						int intersected = 0;
 						for (int i = 0; i < 10; i++)
 						{
-							s += -log(1 - randValue) / max;
+							s += -log(1 - randValue) / _Max;
 							newRand = random(randValue);
 							float2 sigma;
 							sigma = coefficients(r.origin + (s * r.dir));
-							if (newRand < ((sigma.r + sigma.g) / max))
+							if (newRand < ((sigma.r + sigma.g) / _Max))
 							{
 								return s;
 							}
@@ -212,9 +214,9 @@
 					{
 						float s = 0;
 
-						float cumulusScatter = 0.0814896f;
-						float cumulusAbsorb = 0.000000110804f;
-						float max = cumulusScatter + cumulusAbsorb;
+						//float cumulusScatter = 0.0814896f;
+						//float cumulusAbsorb = 0.000000110804f;
+						//float max = cumulusScatter + cumulusAbsorb;
 
 						randValue = random(randValue);
 
@@ -224,7 +226,7 @@
 						for (int i = 0; i < 10; i++)
 						{ 
 							randValue = random(newRand);
-							s += -log(1 - randValue) / max;
+							s += -log(1 - randValue) / _Max;
 							float3 newPos;
 							newPos = pos + (dirtosun * s);
 							if (outsideTexture(texCoordsFromPosition(newPos)))
@@ -233,7 +235,7 @@
 							}
 							float2 sigma;
 							sigma = coefficients(newPos);
-							if (newRand > ((sigma.r + sigma.g) / max))
+							if (newRand > ((sigma.r + sigma.g) / _Max))
 							{
 								return 0;
 							}

@@ -3,7 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+
+
 public class CreateClouds : MonoBehaviour {
+
+
+   public enum cloudType
+    {
+        CUMULUS,
+        STRATOCUMULUS,
+        CIRRUS
+    };
 
 
     private Texture3D _texture;
@@ -12,18 +22,39 @@ public class CreateClouds : MonoBehaviour {
 
     private Renderer shader;
 
+    public cloudType cloudSelection = cloudType.CUMULUS;
     public bool PerlinOn = true;
-    private float cumulusScatter;
-    private float cumulusAbsorb;
+    private float scatter;
+    private float absorb;
 
-    public float scale = 20f;
+    public float PerlinNoisescale = 20f;
     public int textureScale = 256;
 
     // Use this for initialization
     void Start ()
     {
-        cumulusScatter = 0.0814896f;
-        cumulusAbsorb = 0.000000110804f;
+        shader = GetComponent<Renderer>();
+
+        switch(cloudSelection)
+        {
+            case cloudType.CUMULUS:
+                scatter = 0.0814896f;
+                absorb = 0.000000110804f;
+                break;
+            case cloudType.STRATOCUMULUS:
+                scatter = 0.1222340f;
+                absorb = 0.00000008446714f;
+                break;
+            case cloudType.CIRRUS:
+                scatter = 0.1661800f;
+                absorb = 0.000000001f;
+                break;
+            default:
+                break;
+        }
+
+        shader.material.SetFloat("_Max", scatter + absorb);
+
         if (PerlinOn)
         {
             _texture = generatePerlinClouds(textureScale);
@@ -33,10 +64,10 @@ public class CreateClouds : MonoBehaviour {
             _texture = generateVolume(textureScale);
         }
 
+        shader.material.SetTexture("_Volume", _texture);
 
-        //  _texture.filterMode = FilterMode.Bilinear;
+
         /* rgb's
-         * 
          * cumulus scattering 0.0814896 red channel
          *         absorbtion 0.110804 * 10^-6 green channel
          *         
@@ -45,22 +76,7 @@ public class CreateClouds : MonoBehaviour {
          * 
          * cirrus scattering 0.1661800
          *        absorbtion 0.1 * 10^-8
-         * 
-         * 
-         * 
-         * 
-         * 
-         * 
          * */
-
-        //multiple render targets
-        //check if cloud or no cloud, 0 or 1
-
-
-        shader = GetComponent<Renderer>();
-        shader.material.SetTexture("_Volume", _texture);
-        //GetComponent<Renderer>().material.SetVector("_LightDir", DirectionalLight.transform.eulerAngles);
-       
     }
 
     public void setG(Slider slider)
@@ -69,13 +85,10 @@ public class CreateClouds : MonoBehaviour {
         
     }
 
-    // https://github.com/fleity/VolumeDemo/blob/master/Assets/Shaders/raymarch_simple.shader
 
-    // Update is called once per frame
-    void FixedUpdate () {
+    void Update () {
 
         shader.material.SetFloat("_LightIntensity", DirectionalLight.GetComponent<Light>().intensity);
-        //GetComponent<Renderer>().material.SetVector("_LightDir", DirectionalLight.transform.eulerAngles);
     }
     Texture3D generatePerlinClouds(int size)
     {
@@ -89,24 +102,19 @@ public class CreateClouds : MonoBehaviour {
             {
                 for (int z = 0; z < size; z++)
                 {
-                    //float p = Perlin3D((float)x * r, (float)y * r, (float)z * r, 1.0f);
-                    float p1 = Perlin3D((float)x * r, (float)y * r, (float)z * r, scale);
+
+                    float p = Perlin3D((float)x * r, (float)y * r, (float)z * r, PerlinNoisescale);
                     Color c; //= new Color(0.0f, 0.0f, 0.0f, 1.0f);
 
-                    //if (p > 0.5)
-                    //{
-                    //    c = new Color(cumulusAbsorb, cumulusScatter, 1.0f, 1.0f);
-                    //}
-                    if (p1 > 0.5)
+                    if (p > 0.5)
                     {
-                        c = new Color(cumulusAbsorb, cumulusScatter, 1.0f, 1.0f);
+                        c = new Color(absorb, scatter, 1.0f, 1.0f);
                     }
                     else
                     {
                         c = new Color(0, 0, 0, 0);
                     }
-                    // c = new Color(p, p, p, p);
-                    //}
+
                     colorArray[x + (y * size) + (z * size * size)] = c;
                 }
             }
@@ -154,7 +162,7 @@ public class CreateClouds : MonoBehaviour {
                         float p1 = Perlin3D((float)x * r, (float)y * r, (float)z * r, 6.0f);
                         float perlinScale = (p > 0.5 ? 1.0f : 0.0f);
                         perlinScale = perlinScale * (p1 > 0.5 ? 1.0f : 0.0f);
-                        c = new Color(cumulusAbsorb, cumulusScatter, 1.0f, 1.0f);
+                        c = new Color(absorb, scatter, 1.0f, 1.0f);
                     }
                     else
                     {
@@ -173,48 +181,6 @@ public class CreateClouds : MonoBehaviour {
 
     }
 
-
-    Texture3D generateClouds(int size)
-    {
-        Color[] colorArray = new Color[size * size * size];
-        Texture3D _texturetempt = new Texture3D(size, size, size, TextureFormat.RGBA32, false);
-        float r = 1.0f / (size - 1.0f);
-
-
-        for (int x = 0; x < size; x++)
-        {
-            for (int y = 0; y < size; y++)
-            {
-                for (int z = 0; z < size; z++)
-                {
-                    float p = Perlin3D((float)x *r, (float)y *r, (float)z *r, 8.0f);
-                    float p1 = Perlin3D((float)x * r, (float)y * r, (float)z * r, 6.0f);
-                    Color c; //= new Color(0.0f, 0.0f, 0.0f, 1.0f);
-
-                    if (p > 0.5)
-                    {
-                        c = new Color (p, p, p, 1.0f);
-                    }
-                    else if(p1 > 0.5)
-                    {
-                        c = new Color(p1, p1, p1, 1.0f);
-                    }
-                    else
-                    {
-                        c = new Color(0, 0, 0, 0);
-                    }
-                  // c = new Color(p, p, p, p);
-                    //}
-                    colorArray[x + (y * size) + (z * size * size)] = c;
-                }
-            }
-        }
-
-        _texturetempt.SetPixels(colorArray);
-        _texturetempt.Apply();
-        return _texturetempt;
-
-    }
 
 
     public static float Perlin3D(float x, float y, float z, float scale)
