@@ -6,6 +6,7 @@
 		_LightIntensity("LightIntensity", Float) = 100
 		_Factor("Factor", Range(0, 5)) = 1.0
 		_Max("Max", Float) = 0.0
+		_Colour("Colour", Color) = (1.0, 1.0, 1.0, 0.0)
 	}
 		SubShader{
 			Tags{ "Queue" = "Transparent" "RenderType" = "Transparent" }
@@ -49,7 +50,7 @@
 					float _Factor;
 					float _g;
 					float M_PI = 3.14159;
-
+					float4 _Colour;
 					v2f vert(appdata v) {
 						v2f o;
 						o.vertex = UnityObjectToClipPos(v.vertex);
@@ -319,7 +320,7 @@
 							}
 							randValue = random(newRand);
 						}
-						return colour;
+						return colour * _Colour;
 					}
 
 					fixed4 frag(v2f i) : SV_Target
