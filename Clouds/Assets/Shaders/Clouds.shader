@@ -317,7 +317,7 @@
 							}
 							randValue = random(newRand);
 						}
-						return colour * _Colour;
+						return saturate(colour * _Colour);
 					}
 
 					fixed4 frag(v2f i) : SV_Target
