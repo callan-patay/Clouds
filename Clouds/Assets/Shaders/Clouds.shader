@@ -150,11 +150,8 @@
 							v2 = float3(0.0f, v1.z*invLength, -v1.y * invLength);
 						}
 
-						//v1 = normalize(v1);
-						//v2 = normalize(v2);
+			
 						v3 = cross(v1, v2);
-						//v3 = normalize(v3);
-
 						float3x3 OMatrix =
 						{
 							v2.x, v2.y, v2.z,
@@ -340,7 +337,7 @@
 					ENDCG
 				}
 
-			//GrabPass{ "_GrabTexture" }
+			GrabPass{ "_GrabTexture" }
 
 			//Pass
 			//{
@@ -377,7 +374,7 @@
 			//	{
 
 			//		fixed4 pixelCol = fixed4(0, 0, 0, 0.0);
-
+			//	
 			//		#define ADDPIXELX(weight,kernelX) tex2Dproj(_GrabTexture, UNITY_PROJ_COORD(float4(i.uv.x + _GrabTexture_TexelSize.x * kernelX * _Factor, i.uv.y, i.uv.z, i.uv.w))) * weight
 
 			//		pixelCol += ADDPIXELX(0.05, 4.0);
@@ -390,7 +387,7 @@
 			//		pixelCol += ADDPIXELX(0.09, -3.0);
 			//		pixelCol += ADDPIXELX(0.05, -4.0);
 
-			//		/*#define ADDPIXELY(weight,kernelY) tex2Dproj(_GrabTexture, UNITY_PROJ_COORD(float4(i.uv.x, i.uv.y + _GrabTexture_TexelSize.y * kernelY * _Factor, i.uv.z, i.uv.w))) * weight
+			//		#define ADDPIXELY(weight,kernelY) tex2Dproj(_GrabTexture, UNITY_PROJ_COORD(float4(i.uv.x, i.uv.y + _GrabTexture_TexelSize.y * kernelY * _Factor, i.uv.z, i.uv.w))) * weight
 
 			//		pixelCol += ADDPIXELY(0.05, 4.0);
 			//		pixelCol += ADDPIXELY(0.09, 3.0);
@@ -401,7 +398,11 @@
 			//		pixelCol += ADDPIXELY(0.12, -2.0);
 			//		pixelCol += ADDPIXELY(0.09, -3.0);
 			//		pixelCol += ADDPIXELY(0.05, -4.0);
-			//		pixelCol = pixelCol * 0.5f;*/
+			//		pixelCol = pixelCol * 0.5f;
+			//		
+			//		float4 alpha = ADDPIXELX(1, 0.0);
+			//		pixelCol.a = alpha.a;
+
 			//		return pixelCol;
 			//	}
 			//	ENDCG

@@ -79,6 +79,7 @@ Shader "Custom/RayMarch" {
 
 				float4 density = (0.0, 0.0, 0.0, 0.0);
 
+				[loop]
 				for (int i = 0; i < STEPS; i++)
 				{
 
