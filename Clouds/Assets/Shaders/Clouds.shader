@@ -99,7 +99,6 @@
 
 					float2 coefficients(float3 wpos)
 					{
-						//float3 npos = mul(unity_WorldToObject, float4(wpos, 1.0)).xyz + float3(0.5, 0.5, 0.5);
 						return tex3D(_Volume, texCoordsFromPosition(wpos)).rg;
 					}
 
@@ -107,10 +106,6 @@
 					float sampleDistance(Ray r, inout float randValue)
 					{
 						float s = 0;
-
-						//float cumulusScatter = 0.0814896f;
-						//float cumulusAbsorb = 0.000000110804f;
-						//float max = cumulusScatter + cumulusAbsorb;
 
 						randValue = random(randValue);
 
@@ -212,10 +207,6 @@
 					{
 						float s = 0;
 
-						//float cumulusScatter = 0.0814896f;
-						//float cumulusAbsorb = 0.000000110804f;
-						//float max = cumulusScatter + cumulusAbsorb;
-
 						randValue = random(randValue);
 
 						float newRand = random(randValue);
@@ -245,7 +236,7 @@
 					float3 computeDirectLighting(float3 pos, float3 dirtosun, inout float randValue)
 					{
 						float att = 0;
-						//float3 sunLight = float3(10000, 10000, 10000);
+
 						[loop]
 						for (int i = 0; i < 10; i++)
 						{
@@ -259,7 +250,6 @@
 					{
 						int STEPS = 10;
 						float stepSize = 30.0f;
-						//float3 sunLight = float3(10000, 10000, 10000);
 						float density = 0;
 						
 						float3 marchingPos = pos;
@@ -285,7 +275,7 @@
 
 					float4 trace(Ray r, float3 lightDir)
 					{
-						float randValue = random(frac(r.origin.x + r.origin.y + r.origin.z) /*+ _Time*/);
+						float randValue = random(frac(r.origin.x + r.origin.y + r.origin.z));
 						float3 paththrougput = float3(1.0f, 1.0f, 1.0f);
 						float4 colour = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
@@ -305,9 +295,9 @@
 							{
 								float2 sigma;
 								sigma = coefficients(r.origin);
-								colour = colour + float4((paththrougput * computeDirectLighting(r.origin, -lightDir, newRand) * sigma.g * isotropicPF()), 1);// eval(-r.dir, -lightDir)), 1);
+								colour = colour + float4((paththrougput * computeDirectLighting(r.origin, -lightDir, newRand) * sigma.g * isotropicPF()), 1);
 								float3 dir;
-								dir = sampleIsotropic(newRand);// HG(r, newRand);
+								dir = sampleIsotropic(newRand);
 								paththrougput = paththrougput * sigma.g;
 								if (paththrougput.r > 1)
 								{
