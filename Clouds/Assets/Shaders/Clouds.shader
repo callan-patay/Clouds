@@ -1,7 +1,6 @@
 ﻿Shader "Custom/Clouds" {
 	Properties {
 		_Volume("Texture", 3D) = "" {}
-		_g("g", Float) = 0.8
 		_LightIntensity("LightIntensity", Float) = 100
 		_Max("Max", Float) = 0.0
 		_Colour("Colour", Color) = (1.0, 1.0, 1.0, 0.0)
@@ -10,6 +9,7 @@
 			Tags{ "Queue" = "Transparent" "RenderType" = "Transparent" }
 			LOD 100
 
+			//AlphaTest Greater 0.5
 			ZWrite Off
 			Blend OneMinusDstColor One
 				Pass
@@ -39,8 +39,7 @@
 					float _LightIntensity;
 					float _Max;
 					float3 sunLight;
-					float _g;
-					float M_PI = 3.14159;
+
 					float4 _Colour;
 
 					v2f vert(appdata v) {
@@ -148,6 +147,9 @@
 
 						return OMatrix;
 					}
+
+					float _g = 0.8;
+					float M_PI = 3.14159;
 
 					float eval(const float3 wo, const float3 wi)
 					{
@@ -294,18 +296,18 @@
 								float2 sigma;
 								sigma = coefficients(r.origin);
 								//calculates colour
-								colour += float4((paththrougput * computeDirectLighting(r.origin, -lightDir, newRand) * sigma.g * isotropicPF()), 1);
+								colour += float4((paththrougput * computeDirectLighting(r.origin, lightDir, newRand) * sigma.g * isotropicPF()), 1);
 								float3 dir;
 								//samples isotropic phase function
 								dir = sampleIsotropic(newRand);
-								paththrougput *=  sigma.g;
 								r.dir = dir;
+								paththrougput *=  sigma.g;
 							}
 							randValue = random(newRand);
 						}
 
 						//clamps value, and multiply it by desired colour if chosen
-						return saturate(colour * _Colour);
+						return saturate(colour) * _Colour;
 					}
 
 					fixed4 frag(v2f i) : SV_Target
