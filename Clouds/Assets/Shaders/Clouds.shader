@@ -3,25 +3,22 @@
 		_Volume("Texture", 3D) = "" {}
 		_g("g", Float) = 0.8
 		_LightIntensity("LightIntensity", Float) = 100
-		_Factor("Factor", Range(0, 5)) = 1.0
 		_Max("Max", Float) = 0.0
 		_Colour("Colour", Color) = (1.0, 1.0, 1.0, 0.0)
 	}
 		SubShader{
 			Tags{ "Queue" = "Transparent" "RenderType" = "Transparent" }
 			LOD 100
-			//GrabPass { }
+
 			ZWrite Off
-			Blend OneMinusDstColor One//OneMinusSrcAlpha
+			Blend OneMinusDstColor One
 				Pass
 				{
 					CGPROGRAM
 					#pragma vertex vert
 					#pragma fragment frag
-					// Use shader model 3.0 target, to get nicer looking lighting
-					#include "UnityCG.cginc"
-					//#pragma target 3.0
-					#pragma fragmentoption ARB_precision_hint_fastest
+
+					#include "UnityCG.cginc"				
 
 
 					struct appdata {
@@ -30,8 +27,7 @@
 
 					struct v2f {
 						float4 vertex : SV_POSITION;
-						float3 wPos : TEXCOORD1; // World Position
-						float4 uv: TEXCOORD0;
+						float3 wPos : TEXCOORD1;
 					};
 
 					struct Ray {
@@ -46,11 +42,11 @@
 					float _g;
 					float M_PI = 3.14159;
 					float4 _Colour;
+
 					v2f vert(appdata v) {
 						v2f o;
 						o.vertex = UnityObjectToClipPos(v.vertex);
 						o.wPos = mul(unity_ObjectToWorld, v.vertex).xyz;
-						o.uv = ComputeGrabScreenPos(o.vertex);
 						return o;
 					}
 
@@ -75,6 +71,7 @@
 						return r2 - 1.0;
 					}
 
+					//checks if ray position has left the cloud texture
 					bool outsideTexture(float3 uv)
 					{
 						const float EPSILON = 0.01;
@@ -187,6 +184,7 @@
 						return (1.0f / (4.0f * 3.1412654f));
 					}
 
+					
 					float3 sampleIsotropic(inout float randValue)
 					{
 						float s1 = random(randValue);
@@ -198,6 +196,7 @@
 						return float3(cos(phi) * sin(theta), sin(theta) * sin(phi), cos(theta));
 					}
 
+					//checks if light bounced outside of the cloud, or stayed inside of the cloud
 					float computeAttenuation(float3 pos, float3 dirtosun, inout float randValue)
 					{
 						float s = 0;
@@ -228,6 +227,7 @@
 						return 1.0f;
 					}
 
+					//calculates average attenuation of directional lighting
 					float3 computeDirectLighting(float3 pos, float3 dirtosun, inout float randValue)
 					{
 						float att = 0;
@@ -235,12 +235,14 @@
 						[loop]
 						for (int i = 0; i < 10; i++)
 						{
-							att = att + computeAttenuation(pos, dirtosun, randValue);
+							att += computeAttenuation(pos, dirtosun, randValue);
 						}
-						att = att / 10.0f;
+						att /= 10.0f;
 						return (sunLight * att);
 					}
 
+					//attempt at raymarching towards directional light
+					//failed
 					float3 raymarchOut(float3 pos, float3 dirtosun, inout float randValue)
 					{
 						int STEPS = 10;
@@ -267,7 +269,7 @@
 						return (sunLight * trans);
 					}
 
-
+					//main trace algorithm
 					float4 trace(Ray r, float3 lightDir)
 					{
 						float randValue = random(frac(r.origin.x + r.origin.y + r.origin.z));
@@ -280,6 +282,7 @@
 						for (int i = 0; i < 10; i++)
 						{
 							newRand = random(randValue);
+							//woodcock tracking
 							float distance = sampleDistance(r, randValue);
 							r.origin += r.dir * distance;
 							if (outsideTexture(texCoordsFromPosition(r.origin)))
@@ -290,14 +293,18 @@
 							{
 								float2 sigma;
 								sigma = coefficients(r.origin);
-								colour = colour + float4((paththrougput * computeDirectLighting(r.origin, -lightDir, newRand) * sigma.g * isotropicPF()), 1);
+								//calculates colour
+								colour += float4((paththrougput * computeDirectLighting(r.origin, -lightDir, newRand) * sigma.g * isotropicPF()), 1);
 								float3 dir;
+								//samples isotropic phase function
 								dir = sampleIsotropic(newRand);
-								paththrougput = paththrougput * sigma.g;
+								paththrougput *=  sigma.g;
 								r.dir = dir;
 							}
 							randValue = random(newRand);
 						}
+
+						//clamps value, and multiply it by desired colour if chosen
 						return saturate(colour * _Colour);
 					}
 
@@ -312,79 +319,7 @@
 						return trace(ray, _WorldSpaceLightPos0);
 
 					}
-				
 					ENDCG
 				}
-
-			GrabPass{ "_GrabTexture" }
-
-			//Pass
-			//{
-			//	CGPROGRAM
-			//	#pragma vertex vert
-			//	#pragma fragment frag
-
-			//	#include "UnityCG.cginc"
-			//	struct appdata
-			//	{
-			//		float4 vertex : POSITION;
-			//		float2 uv : TEXCOORD0;
-			//	};
-
-			//	struct v2f
-			//	{
-			//		float4 pos: SV_POSITION;
-			//		float4 uv : TEXCOORD0;
-			//	};
-
-			//	v2f vert(appdata v)
-			//	{
-			//		v2f o;
-			//		o.pos = UnityObjectToClipPos(v.vertex);
-			//		o.uv = ComputeGrabScreenPos(o.pos);
-			//		return o;
-			//	}
-
-			//	sampler2D _GrabTexture;
-			//	float4 _GrabTexture_TexelSize;
-			//	float _Factor;
-
-			//	fixed4 frag(v2f i) : SV_Target
-			//	{
-
-			//		fixed4 pixelCol = fixed4(0, 0, 0, 0.0);
-			//	
-			//		#define ADDPIXELX(weight,kernelX) tex2Dproj(_GrabTexture, UNITY_PROJ_COORD(float4(i.uv.x + _GrabTexture_TexelSize.x * kernelX * _Factor, i.uv.y, i.uv.z, i.uv.w))) * weight
-
-			//		pixelCol += ADDPIXELX(0.05, 4.0);
-			//		pixelCol += ADDPIXELX(0.09, 3.0);
-			//		pixelCol += ADDPIXELX(0.12, 2.0);
-			//		pixelCol += ADDPIXELX(0.15, 1.0);
-			//		pixelCol += ADDPIXELX(0.18, 0.0);
-			//		pixelCol += ADDPIXELX(0.15, -1.0);
-			//		pixelCol += ADDPIXELX(0.12, -2.0);
-			//		pixelCol += ADDPIXELX(0.09, -3.0);
-			//		pixelCol += ADDPIXELX(0.05, -4.0);
-
-			//		#define ADDPIXELY(weight,kernelY) tex2Dproj(_GrabTexture, UNITY_PROJ_COORD(float4(i.uv.x, i.uv.y + _GrabTexture_TexelSize.y * kernelY * _Factor, i.uv.z, i.uv.w))) * weight
-
-			//		pixelCol += ADDPIXELY(0.05, 4.0);
-			//		pixelCol += ADDPIXELY(0.09, 3.0);
-			//		pixelCol += ADDPIXELY(0.12, 2.0);
-			//		pixelCol += ADDPIXELY(0.15, 1.0);
-			//		pixelCol += ADDPIXELY(0.18, 0.0);
-			//		pixelCol += ADDPIXELY(0.15, -1.0);
-			//		pixelCol += ADDPIXELY(0.12, -2.0);
-			//		pixelCol += ADDPIXELY(0.09, -3.0);
-			//		pixelCol += ADDPIXELY(0.05, -4.0);
-			//		pixelCol = pixelCol * 0.5f;
-			//		
-			//		float4 alpha = ADDPIXELX(1, 0.0);
-			//		pixelCol.a = alpha.a;
-
-			//		return pixelCol;
-			//	}
-			//	ENDCG
-			//}
 		}
 }
