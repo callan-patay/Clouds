@@ -1,7 +1,6 @@
 ﻿Shader "Custom/Clouds" {
 	Properties {
 		_Volume("Texture", 3D) = "" {}
-		_LightDir("LightDir", Vector) = (0.0, 0.0, 0.0, -1.0)
 		_g("g", Float) = 0.8
 		_LightIntensity("LightIntensity", Float) = 100
 		_Factor("Factor", Range(0, 5)) = 1.0
@@ -41,13 +40,9 @@
 					};
 
 					sampler3D _Volume;
-					float3 _LightDir;
 					float _LightIntensity;
 					float _Max;
 					float3 sunLight;
-					sampler2D _GrabTexture;
-					float4 _GrabTexture_TexelSize;
-					float _Factor;
 					float _g;
 					float M_PI = 3.14159;
 					float4 _Colour;
@@ -124,7 +119,7 @@
 							randValue = random(newRand);
 						}
 
-						return 1000000000.0f;
+						return 0.0f;
 					}
 
 
@@ -299,10 +294,6 @@
 								float3 dir;
 								dir = sampleIsotropic(newRand);
 								paththrougput = paththrougput * sigma.g;
-								if (paththrougput.r > 1)
-								{
-									return float4(1, 0, 0, 1);
-								}
 								r.dir = dir;
 							}
 							randValue = random(newRand);
@@ -318,10 +309,8 @@
 						ray.origin = worldPosition;
 						ray.dir = viewDirection;
 						sunLight = float3(_LightIntensity, _LightIntensity, _LightIntensity);
-						_LightDir = normalize(_LightDir);
 						return trace(ray, _WorldSpaceLightPos0);
 
-						//half4 pixelCol = trace(ray, _WorldSpaceLightPos0);
 					}
 				
 					ENDCG
