@@ -82,12 +82,14 @@
 							);
 					}
 
+					//multiplies ray position with world to object matrix
 					float3 texCoordsFromPosition(float3 position)
 					{
 						float3 npos = mul(unity_WorldToObject, float4(position, 1.0)).xyz;
 						return npos + float3(0.5, 0.5, 0.5);
 					}
 
+					//obtains scattering and absorption coefficients of current point in 3D texture
 					float2 coefficients(float3 wpos)
 					{
 						return tex3D(_Volume, texCoordsFromPosition(wpos)).rg;
@@ -121,65 +123,65 @@
 
 			
 
-					float3x3 createOrthonormalbasis(float3 v1)
-					{
-						float3 v2;
-						float3 v3;
-						if (abs(v1.x) > abs(v1.y))
-						{
-							float invlength = 1.0f / sqrt(v1.x*v1.x + v1.z*v1.z);
-							v2 = float3(-v1.z * invlength, 0.0f, v1.x * invlength);
-						}
-						else
-						{
-							float invLength = 1.0f / sqrt(v1.y*v1.y + v1.z*v1.z);
-							v2 = float3(0.0f, v1.z*invLength, -v1.y * invLength);
-						}
+					//float3x3 createOrthonormalbasis(float3 v1)
+					//{
+					//	float3 v2;
+					//	float3 v3;
+					//	if (abs(v1.x) > abs(v1.y))
+					//	{
+					//		float invlength = 1.0f / sqrt(v1.x*v1.x + v1.z*v1.z);
+					//		v2 = float3(-v1.z * invlength, 0.0f, v1.x * invlength);
+					//	}
+					//	else
+					//	{
+					//		float invLength = 1.0f / sqrt(v1.y*v1.y + v1.z*v1.z);
+					//		v2 = float3(0.0f, v1.z*invLength, -v1.y * invLength);
+					//	}
 
 			
-						v3 = cross(v1, v2);
-						float3x3 OMatrix =
-						{
-							v2.x, v2.y, v2.z,
-							v3.x, v3.y, v3.z,
-							v1.x, v1.y, v1.z
-						};
+					//	v3 = cross(v1, v2);
+					//	float3x3 OMatrix =
+					//	{
+					//		v2.x, v2.y, v2.z,
+					//		v3.x, v3.y, v3.z,
+					//		v1.x, v1.y, v1.z
+					//	};
 
-						return OMatrix;
-					}
+					//	return OMatrix;
+					//}
 
-					float _g = 0.8;
+					//float _g = 0.8;
 					float M_PI = 3.14159;
 
-					float eval(const float3 wo, const float3 wi)
-					{
-						const float k = 1.0f + (_g * _g) - (2.0f * _g * dot(normalize(wi), normalize(wo)));
-						float u =  (1.0f / (4.0f * M_PI)) *((1.0f - (_g * _g)) / (k * sqrt(k)));
-						return u;
-					}
+					//float eval(const float3 wo, const float3 wi)
+					//{
+					//	const float k = 1.0f + (_g * _g) - (2.0f * _g * dot(normalize(wi), normalize(wo)));
+					//	float u =  (1.0f / (4.0f * M_PI)) *((1.0f - (_g * _g)) / (k * sqrt(k)));
+					//	return u;
+					//}
 
-					float3 HG(Ray r, float randValue)
-					{
-						float M_TWO_PI = M_PI * 2;
-						float s1 = random(randValue);
-						float s2 = random(s1);
-						float costheta;
-						costheta = (1.0f - (_g * _g)) / (1.0f - _g + (2.0f * _g * s1));
-						costheta = (1.0f + (_g * _g) - (costheta * costheta)) / (2.0f * _g);
-						float sintheta;
-						sintheta = sqrt(1.0f - (costheta * costheta));
-						float phi;
-						phi = s2 * M_TWO_PI;
+					//float3 HG(Ray r, float randValue)
+					//{
+					//	float M_TWO_PI = M_PI * 2;
+					//	float s1 = random(randValue);
+					//	float s2 = random(s1);
+					//	float costheta;
+					//	costheta = (1.0f - (_g * _g)) / (1.0f - _g + (2.0f * _g * s1));
+					//	costheta = (1.0f + (_g * _g) - (costheta * costheta)) / (2.0f * _g);
+					//	float sintheta;
+					//	sintheta = sqrt(1.0f - (costheta * costheta));
+					//	float phi;
+					//	phi = s2 * M_TWO_PI;
 
-						float3 wi = float3(sintheta * cos(phi), sintheta * sin(phi), costheta);
+					//	float3 wi = float3(sintheta * cos(phi), sintheta * sin(phi), costheta);
 
-						float3x3 Omatrix = createOrthonormalbasis(r.dir);
-						Omatrix = transpose(Omatrix);
+					//	float3x3 Omatrix = createOrthonormalbasis(r.dir);
+					//	Omatrix = transpose(Omatrix);
 
-						float3 wiglobal = mul(Omatrix, wi);
+					//	float3 wiglobal = mul(Omatrix, wi);
 
-						return wiglobal;
-					}
+					//	return wiglobal;
+					//}
 
 					float isotropicPF()
 					{
@@ -245,7 +247,7 @@
 
 					//attempt at raymarching towards directional light
 					//failed
-					float3 raymarchOut(float3 pos, float3 dirtosun, inout float randValue)
+					/*float3 raymarchOut(float3 pos, float3 dirtosun, inout float randValue)
 					{
 						int STEPS = 10;
 						float stepSize = 30.0f;
@@ -269,7 +271,7 @@
 						}
 						float trans = exp(-density);
 						return (sunLight * trans);
-					}
+					}*/
 
 					//main trace algorithm
 					float4 trace(Ray r, float3 lightDir)

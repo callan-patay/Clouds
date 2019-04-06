@@ -17,15 +17,12 @@ public class CreateClouds : MonoBehaviour {
 
 
     private Texture3D _texture;
-
-    public GameObject DirectionalLight;
-
     private Renderer shader;
-
-    public cloudType cloudSelection = cloudType.CUMULUS;
     private float scatter;
     private float absorb;
 
+    public GameObject DirectionalLight;
+    public cloudType cloudSelection = cloudType.CUMULUS;
     public float PerlinNoisescale = 20f;
     public int textureScale = 256;
 
@@ -53,35 +50,13 @@ public class CreateClouds : MonoBehaviour {
         }
 
         shader.material.SetFloat("_Max", scatter + absorb);
-
         _texture = generatePerlinClouds(textureScale);
-        
-
-
         shader.material.SetTexture("_Volume", _texture);
 
-
-        /* rgb's
-         * cumulus scattering 0.0814896 red channel
-         *         absorbtion 0.110804 * 10^-6 green channel
-         *         
-         * stratocumulus scattering 0.1222340
-         *               absorbtion 0.844671 * 10^-7
-         * 
-         * cirrus scattering 0.1661800
-         *        absorbtion 0.1 * 10^-8
-         * */
-    }
-
-    public void setG(Slider slider)
-    {
-        shader.material.SetFloat("_g", slider.value);
-        
     }
 
 
     void Update () {
-
         shader.material.SetFloat("_LightIntensity", DirectionalLight.GetComponent<Light>().intensity);
     }
     Texture3D generatePerlinClouds(int size)
