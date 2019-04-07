@@ -1490,7 +1490,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   DirectionalLight: {fileID: 332268468}
   cloudSelection: 2
-  PerlinNoisescale: 6
+  PerlinNoisescale: 20
   textureScale: 256
 --- !u!1 &839989127
 GameObject:
