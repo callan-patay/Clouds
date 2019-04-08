@@ -75,6 +75,7 @@ public class CreateClouds : MonoBehaviour {
                     float p = Perlin3D((float)x * r, (float)y * r, (float)z * r, PerlinNoisescale);
                     Color c;
 
+                    //populates cloud with absorption and scattering coefficient in perlin noise
                     if (p > 0.5)
                     {
                         c = new Color(absorb, scatter, 0.0f, 1.0f);

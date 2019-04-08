@@ -9,7 +9,7 @@
 			Tags{ "Queue" = "Transparent" "RenderType" = "Transparent" }
 			LOD 100
 
-			//AlphaTest Greater 0.5
+
 			ZWrite Off
 			Blend OneMinusDstColor One
 				Pass
@@ -39,7 +39,7 @@
 					float _LightIntensity;
 					float _Max;
 					float3 sunLight;
-
+					
 					float4 _Colour;
 
 					v2f vert(appdata v) {
@@ -58,6 +58,7 @@
 						return x;
 					}
 
+					//random number generator for monte carlo
 					float random(float f) {
 						const uint mantissaMask = 0x007FFFFFu;
 						const uint one = 0x3F800000u;
@@ -122,7 +123,7 @@
 
 
 			
-
+					//creates orthonormal basis for the ray direction
 					//float3x3 createOrthonormalbasis(float3 v1)
 					//{
 					//	float3 v2;
@@ -153,6 +154,7 @@
 					//float _g = 0.8;
 					float M_PI = 3.14159;
 
+					//evaluates Henyey-Greenstein phase function
 					//float eval(const float3 wo, const float3 wi)
 					//{
 					//	const float k = 1.0f + (_g * _g) - (2.0f * _g * dot(normalize(wi), normalize(wo)));
@@ -160,6 +162,7 @@
 					//	return u;
 					//}
 
+					//samples Henyey-Greenstein Phase function
 					//float3 HG(Ray r, float randValue)
 					//{
 					//	float M_TWO_PI = M_PI * 2;
@@ -188,7 +191,7 @@
 						return (1.0f / (4.0f * 3.1412654f));
 					}
 
-					
+					//samples isotropic to calculate outgoing ray direction
 					float3 sampleIsotropic(inout float randValue)
 					{
 						float s1 = random(randValue);
@@ -246,7 +249,7 @@
 					}
 
 					//attempt at raymarching towards directional light
-					//failed
+					//produces biased result
 					/*float3 raymarchOut(float3 pos, float3 dirtosun, inout float randValue)
 					{
 						int STEPS = 10;
