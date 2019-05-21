@@ -11,3 +11,5 @@ Open the Scene named "Main".
 In the Hierarchy select Cloud.
 In the Inspector, the Create Cloud script allows you to select different cloud types, Scale of perlin noise, and size of the texture.
 In the shader you can also choose a colour to change the colour of the clouds. Press play to begin the simulation.
+
+The simulation code is in the shader called Clouds, along with the C# script CreateClouds.
